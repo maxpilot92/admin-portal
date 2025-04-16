@@ -1,10 +1,10 @@
 import { DashboardLayout } from "@/components/dashboard-layout";
-import { DashboardPage } from "@/components/dashboard-page";
+import { MediaPage } from "@/components/media-page";
 
-export default function Home() {
+export default function Media() {
   return (
     <DashboardLayout>
-      <DashboardPage />
+      <MediaPage />
     </DashboardLayout>
   );
 }
