@@ -76,6 +76,8 @@ export function Navbar({ onSidebarToggle }: NavbarProps) {
             >
               <Image
                 src="/placeholder.svg?height=32&width=32"
+                width={100}
+                height={100}
                 alt="User avatar"
                 className="rounded-full"
               />

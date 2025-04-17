@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import {
   Edit,
   Eye,
@@ -40,8 +41,26 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
 import axios from "axios";
+
+export interface Category {
+  id: string;
+  name: string;
+  createdAt: string;
+  updatedAt: string;
+  blogs: Blog[];
+}
 
 export interface Blog {
   id: string;
@@ -50,13 +69,13 @@ export interface Blog {
   published: boolean;
   tags: string[];
   categoryId: string;
-  categoryName: string;
+  Category: Category;
   userId: string;
   userName: string;
   createdAt: string;
   updatedAt: string;
   mediaId: string;
-  mediaUrl: string;
+  url: string;
 }
 
 export function BlogPage() {
@@ -73,12 +92,17 @@ export function BlogPage() {
     { id: "4", name: "DevOps" },
   ]);
 
+  // State for delete confirmation dialog
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [blogToDelete, setBlogToDelete] = useState<string | null>(null);
+
   useEffect(() => {
     const getBlogPosts = async () => {
       try {
         setIsLoading(true);
         const response = await axios.get("/api/blog");
         const data = response.data.data;
+        console.log("Blog posts data:", data);
         setBlogPosts(data);
       } catch (error) {
         console.error("Error fetching blog posts:", error);
@@ -93,6 +117,8 @@ export function BlogPage() {
     post.title.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  console.log(filteredPosts, "filteredPosts");
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return new Intl.DateTimeFormat("en-US", {
@@ -106,15 +132,25 @@ export function BlogPage() {
     router.push(`/blog/edit/${blogId}`);
   };
 
-  const handleDeleteBlog = async (blogId: string) => {
-    if (confirm("Are you sure you want to delete this blog post?")) {
-      try {
-        await axios.delete(`/api/blog/${blogId}`);
-        // Refresh the blog posts list
-        setBlogPosts(blogPosts.filter((post) => post.id !== blogId));
-      } catch (error) {
-        console.error("Error deleting blog post:", error);
-      }
+  // Open delete confirmation dialog
+  const openDeleteDialog = (blogId: string) => {
+    setBlogToDelete(blogId);
+    setIsDeleteDialogOpen(true);
+  };
+
+  // Handle actual deletion after confirmation
+  const handleDeleteBlog = async () => {
+    if (!blogToDelete) return;
+
+    try {
+      await axios.delete(`/api/blog?blogId=${blogToDelete}`);
+      // Refresh the blog posts list
+      setBlogPosts(blogPosts.filter((post) => post.id !== blogToDelete));
+      // Close the dialog
+      setIsDeleteDialogOpen(false);
+      setBlogToDelete(null);
+    } catch (error) {
+      console.error("Error deleting blog post:", error);
     }
   };
 
@@ -231,13 +267,11 @@ export function BlogPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[50px]">ID</TableHead>
                 <TableHead className="w-[80px]">Image</TableHead>
-                <TableHead className="w-[250px]">Title</TableHead>
-                <TableHead className="w-[120px]">Author</TableHead>
+                <TableHead className="w-[50px]">Title</TableHead>
                 <TableHead className="w-[100px]">Status</TableHead>
                 <TableHead className="w-[150px]">Category</TableHead>
-                <TableHead className="w-[200px]">Tags</TableHead>
+                <TableHead className="w-[250px]">Tags</TableHead>
                 <TableHead className="w-[120px]">Created</TableHead>
                 <TableHead className="w-[120px]">Updated</TableHead>
                 <TableHead className="w-[100px] text-right">Actions</TableHead>
@@ -253,22 +287,20 @@ export function BlogPage() {
               ) : (
                 filteredPosts?.map((post) => (
                   <TableRow key={post.id}>
-                    <TableCell className="font-medium">
-                      {post.id.substring(0, 8)}
-                    </TableCell>
                     <TableCell>
-                      {post.mediaUrl && (
+                      {post.url && (
                         <div className="h-10 w-10 rounded overflow-hidden">
-                          <img
-                            src={post.mediaUrl || "/placeholder.svg"}
-                            alt=""
+                          <Image
+                            width={40}
+                            height={40}
+                            src={post.url || "/placeholder.svg"}
+                            alt={post.title}
                             className="h-full w-full object-cover"
                           />
                         </div>
                       )}
                     </TableCell>
                     <TableCell className="font-medium">{post.title}</TableCell>
-                    <TableCell>{post.userName}</TableCell>
                     <TableCell>
                       <Badge
                         variant={post.published ? "default" : "outline"}
@@ -277,7 +309,7 @@ export function BlogPage() {
                         {post.published ? "Published" : "Draft"}
                       </Badge>
                     </TableCell>
-                    <TableCell>{post.categoryName}</TableCell>
+                    <TableCell>{post.Category?.name ?? " "}</TableCell>
                     <TableCell>
                       <div className="flex flex-wrap gap-1">
                         {post.tags.map((tag, index) => (
@@ -327,7 +359,7 @@ export function BlogPage() {
                           <DropdownMenuSeparator />
                           <DropdownMenuItem
                             className="text-destructive"
-                            onClick={() => handleDeleteBlog(post.id)}
+                            onClick={() => openDeleteDialog(post.id)}
                           >
                             <Trash2 className="mr-2 h-4 w-4" />
                             <span>Delete</span>
@@ -342,6 +374,33 @@ export function BlogPage() {
           </Table>
         </div>
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog
+        open={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Blog Post</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this blog post? This action cannot
+              be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setBlogToDelete(null)}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteBlog}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90 hover:cursor-pointer text-white"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

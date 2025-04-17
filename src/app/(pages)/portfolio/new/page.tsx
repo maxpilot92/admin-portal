@@ -1,10 +1,10 @@
 import { DashboardLayout } from "@/components/dashboard-layout";
-import { PortfolioPage } from "@/components/portfolio-page";
+import { NewProjectPage } from "@/components/new-project-page";
 
-export default function Portfolio() {
+export default function NewProject() {
   return (
     <DashboardLayout>
-      <PortfolioPage />
+      <NewProjectPage />
     </DashboardLayout>
   );
 }

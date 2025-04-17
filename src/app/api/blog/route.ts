@@ -63,6 +63,7 @@ export async function GET(request: NextRequest) {
     const blogs = await prisma.blog.findMany({
       include: { User: true, Category: true },
     });
+
     return NextResponse.json({ status: "success", data: blogs });
   } catch (error) {
     console.error("Error fetching blogs:", error);

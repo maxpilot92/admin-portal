@@ -160,6 +160,8 @@ export function Sidebar({ open, onOpenChange }: SidebarProps) {
               <Image
                 src="/placeholder.svg?height=36&width=36"
                 alt="User avatar"
+                width={100}
+                height={100}
                 className="rounded-full"
               />
             </div>

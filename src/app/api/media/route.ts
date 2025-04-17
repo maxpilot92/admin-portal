@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const { base64Data, title } = await request.json();
-    console.log("Received data:", { base64Data, title });
+
     if (!base64Data) {
       return NextResponse.json(
         { error: "Missing image data" },

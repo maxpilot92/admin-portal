@@ -1,6 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import type React from "react";
+
+import { useEffect, useState, useMemo } from "react";
 import {
   Download,
   Edit,
@@ -34,6 +36,16 @@ import {
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import axios from "axios";
 import Image from "next/image";
 
@@ -46,14 +58,16 @@ export interface MediaItem {
 
 export function MediaPage() {
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedMedia, setSelectedMedia] = useState<
-    (typeof mediaItems)[0] | null
-  >(null);
+  const [selectedMedia, setSelectedMedia] = useState<MediaItem | null>(null);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [title, setTitle] = useState<string>("");
   const [mediaItems, setMediaItems] = useState<MediaItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [mediaToDelete, setMediaToDelete] = useState<string | null>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
 
   const onFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
@@ -63,11 +77,14 @@ export function MediaPage() {
 
   async function fetchMedia() {
     try {
+      setIsLoading(true);
       const response = await axios.get("/api/media");
       const data = response.data.data;
       setMediaItems(data);
     } catch (error) {
       console.log("Error fetching media:", error);
+    } finally {
+      setIsLoading(false);
     }
   }
 
@@ -75,17 +92,18 @@ export function MediaPage() {
     fetchMedia();
   }, []);
 
-  const filteredMedia =
-    mediaItems?.filter((item) =>
+  // Use useMemo to avoid re-filtering on every render
+  const filteredMedia = useMemo(() => {
+    return mediaItems.filter((item) =>
       item.title.toLowerCase().includes(searchTerm.toLowerCase())
-    ) || [];
+    );
+  }, [mediaItems, searchTerm]);
 
   const getBase64 = (file: File) => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
-      reader.readAsDataURL(file); // Reads file as a base64 encoded string (includes data: prefix)
+      reader.readAsDataURL(file);
       reader.onload = () => {
-        // We split the result to remove the data: prefix if needed.
         const base64String =
           typeof reader.result === "string"
             ? reader.result.split(",")[1]
@@ -98,32 +116,49 @@ export function MediaPage() {
 
   const handleUpload = async () => {
     if (!selectedFile || !title.trim()) {
-      console.log("File and title are required");
       return;
     }
 
-    console.log("Started");
     try {
+      setIsUploading(true);
       const base64Data = await getBase64(selectedFile);
-      const response = await axios.post("/api/media", {
+      await axios.post("/api/media", {
         base64Data,
         title: title.trim(),
       });
-      console.log("File uploaded successfully:", response.data);
       setIsUploadDialogOpen(false);
       setTitle("");
       setSelectedFile(null);
       fetchMedia(); // Refresh the media list after upload
     } catch (error) {
       console.log("Error uploading file:", error);
+    } finally {
+      setIsUploading(false);
     }
-    console.log("Finished");
   };
 
   const resetUploadForm = () => {
     setTitle("");
     setSelectedFile(null);
     setIsUploadDialogOpen(false);
+  };
+
+  const openDeleteDialog = (mediaId: string) => {
+    setMediaToDelete(mediaId);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const handleDeleteMedia = async () => {
+    if (!mediaToDelete) return;
+
+    try {
+      await axios.delete(`/api/media?mediaId=${mediaToDelete}`);
+      setMediaItems(mediaItems.filter((item) => item.id !== mediaToDelete));
+      setIsDeleteDialogOpen(false);
+      setMediaToDelete(null);
+    } catch (error) {
+      console.error("Error deleting media:", error);
+    }
   };
 
   return (
@@ -190,9 +225,16 @@ export function MediaPage() {
                 </Button>
                 <Button
                   onClick={handleUpload}
-                  disabled={!selectedFile || !title.trim()}
+                  disabled={!selectedFile || !title.trim() || isUploading}
                 >
-                  Upload
+                  {isUploading ? (
+                    <>
+                      <div className="animate-spin mr-2 h-4 w-4 border-2 border-current border-t-transparent rounded-full" />
+                      Uploading...
+                    </>
+                  ) : (
+                    "Upload"
+                  )}
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -273,119 +315,64 @@ export function MediaPage() {
         </div>
       </div>
 
-      {mediaItems && mediaItems.length > 0 ? (
-        viewMode === "grid" ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {filteredMedia.map((item) => (
-              <Card key={item.id} className="overflow-hidden group">
-                <div className="relative aspect-video">
-                  <Image
-                    src={item.url || "/placeholder.svg"}
-                    alt={item.title}
-                    className="object-cover w-full h-full transition-all duration-300 group-hover:scale-105"
-                  />
-                  <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      className="h-8 w-8 text-white"
-                      onClick={() => setSelectedMedia(item)}
-                    >
-                      <Eye className="h-4 w-4" />
-                      <span className="sr-only">View</span>
-                    </Button>
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      className="h-8 w-8 text-white"
-                    >
-                      <Edit className="h-4 w-4" />
-                      <span className="sr-only">Edit</span>
-                    </Button>
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      className="h-8 w-8 text-white"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                      <span className="sr-only">Delete</span>
-                    </Button>
-                  </div>
+      {isLoading ? (
+        <div className="flex justify-center items-center h-64">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </div>
+      ) : mediaItems.length === 0 ? (
+        <div className="text-center py-10 border rounded-md">
+          <p className="text-muted-foreground">No media items found</p>
+        </div>
+      ) : viewMode === "grid" ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          {filteredMedia.map((item) => (
+            <Card key={item.id} className="overflow-hidden group">
+              <div className="relative aspect-video w-full h-48">
+                <Image
+                  src={item.url || "/placeholder.svg"}
+                  alt={item.title}
+                  fill
+                  sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                  className="object-cover transition-all duration-300 group-hover:scale-105"
+                  priority={false}
+                />
+                <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-8 w-8 text-white"
+                    onClick={() => setSelectedMedia(item)}
+                  >
+                    <Eye className="h-4 w-4" />
+                    <span className="sr-only">View</span>
+                  </Button>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-8 w-8 text-white"
+                  >
+                    <Edit className="h-4 w-4" />
+                    <span className="sr-only">Edit</span>
+                  </Button>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-8 w-8 text-white"
+                    onClick={() => openDeleteDialog(item.id)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    <span className="sr-only">Delete</span>
+                  </Button>
                 </div>
-                <CardContent className="p-3">
-                  <div className="flex items-center justify-between">
-                    <p
-                      className="text-sm font-medium truncate"
-                      title={item.title}
-                    >
-                      {item.title}
-                    </p>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8">
-                          <MoreHorizontal className="h-4 w-4" />
-                          <span className="sr-only">More options</span>
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Options</DropdownMenuLabel>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem>
-                          <Eye className="mr-2 h-4 w-4" />
-                          <span>View</span>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem>
-                          <Edit className="mr-2 h-4 w-4" />
-                          <span>Edit</span>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem>
-                          <Download className="mr-2 h-4 w-4" />
-                          <span>Download</span>
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem className="text-destructive">
-                          <Trash2 className="mr-2 h-4 w-4" />
-                          <span>Delete</span>
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        ) : (
-          <div className="border rounded-md">
-            <div className="grid grid-cols-12 gap-4 p-4 font-medium text-sm border-b">
-              <div className="col-span-1">Preview</div>
-              <div className="col-span-3">Title</div>
-              <div className="col-span-7">URL</div>
-              <div className="col-span-1 text-right">Actions</div>
-            </div>
-            {filteredMedia.map((item) => (
-              <div
-                key={item.id}
-                className="grid grid-cols-12 gap-4 p-4 items-center border-b hover:bg-muted/50"
-              >
-                <div className="col-span-1">
-                  <div className="aspect-square w-10 h-10 rounded overflow-hidden">
-                    <Image
-                      src={item.url || "/placeholder.svg"}
-                      alt={item.title}
-                      className="object-cover w-full h-full"
-                    />
-                  </div>
-                </div>
-                <div
-                  className="col-span-3 font-medium truncate"
-                  title={item.title}
-                >
-                  {item.title}
-                </div>
-                <div className="col-span-7 text-sm text-muted-foreground truncate">
-                  {item.url}
-                </div>
-                <div className="col-span-1 flex justify-end">
+              </div>
+              <CardContent className="p-3">
+                <div className="flex items-center justify-between">
+                  <p
+                    className="text-sm font-medium truncate"
+                    title={item.title}
+                  >
+                    {item.title}
+                  </p>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button variant="ghost" size="icon" className="h-8 w-8">
@@ -396,7 +383,7 @@ export function MediaPage() {
                     <DropdownMenuContent align="end">
                       <DropdownMenuLabel>Options</DropdownMenuLabel>
                       <DropdownMenuSeparator />
-                      <DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => setSelectedMedia(item)}>
                         <Eye className="mr-2 h-4 w-4" />
                         <span>View</span>
                       </DropdownMenuItem>
@@ -409,38 +396,111 @@ export function MediaPage() {
                         <span>Download</span>
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
-                      <DropdownMenuItem className="text-destructive">
+                      <DropdownMenuItem
+                        className="text-destructive"
+                        onClick={() => openDeleteDialog(item.id)}
+                      >
                         <Trash2 className="mr-2 h-4 w-4" />
                         <span>Delete</span>
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </div>
-              </div>
-            ))}
-          </div>
-        )
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       ) : (
-        <div className="text-center py-10 border rounded-md">
-          <p className="text-muted-foreground">No media items found</p>
+        <div className="border rounded-md">
+          <div className="grid grid-cols-12 gap-4 p-4 font-medium text-sm border-b">
+            <div className="col-span-1">Preview</div>
+            <div className="col-span-3">Title</div>
+            <div className="col-span-7">URL</div>
+            <div className="col-span-1 text-right">Actions</div>
+          </div>
+          {filteredMedia.map((item) => (
+            <div
+              key={item.id}
+              className="grid grid-cols-12 gap-4 p-4 items-center border-b hover:bg-muted/50"
+            >
+              <div className="col-span-1">
+                <div className="aspect-square w-10 h-10 rounded overflow-hidden relative">
+                  <Image
+                    src={item.url || "/placeholder.svg"}
+                    alt={item.title}
+                    fill
+                    sizes="40px"
+                    className="object-cover"
+                  />
+                </div>
+              </div>
+              <div
+                className="col-span-3 font-medium truncate"
+                title={item.title}
+              >
+                {item.title}
+              </div>
+              <div className="col-span-7 text-sm text-muted-foreground truncate">
+                {item.url}
+              </div>
+              <div className="col-span-1 flex justify-end">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-8 w-8">
+                      <MoreHorizontal className="h-4 w-4" />
+                      <span className="sr-only">More options</span>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuLabel>Options</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => setSelectedMedia(item)}>
+                      <Eye className="mr-2 h-4 w-4" />
+                      <span>View</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem>
+                      <Edit className="mr-2 h-4 w-4" />
+                      <span>Edit</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem>
+                      <Download className="mr-2 h-4 w-4" />
+                      <span>Download</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      className="text-destructive"
+                      onClick={() => openDeleteDialog(item.id)}
+                    >
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      <span>Delete</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            </div>
+          ))}
         </div>
       )}
 
+      {/* Media View Dialog */}
       {selectedMedia && (
         <Dialog
           open={!!selectedMedia}
-          onOpenChange={() => setSelectedMedia(null)}
+          onOpenChange={(open) => !open && setSelectedMedia(null)}
         >
           <DialogContent className="sm:max-w-[700px]">
             <DialogHeader>
               <DialogTitle>{selectedMedia.title}</DialogTitle>
             </DialogHeader>
             <div className="grid gap-4 py-4">
-              <div className="aspect-video overflow-hidden rounded-md">
+              <div className="aspect-video overflow-hidden rounded-md relative h-[300px]">
                 <Image
                   src={selectedMedia.url || "/placeholder.svg"}
                   alt={selectedMedia.title}
-                  className="object-cover w-full h-full"
+                  fill
+                  sizes="(max-width: 700px) 100vw, 700px"
+                  className="object-contain"
+                  priority
                 />
               </div>
               <div>
@@ -466,6 +526,33 @@ export function MediaPage() {
           </DialogContent>
         </Dialog>
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog
+        open={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Media</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this media item? This action
+              cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setMediaToDelete(null)}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteMedia}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
