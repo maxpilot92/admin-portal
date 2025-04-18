@@ -72,12 +72,11 @@ type UserRole = "admin" | "manager" | "contributor";
 
 interface User {
   id: string;
-  name: string;
+  username: string;
   email: string;
   role: UserRole;
   status: UserStatus;
-  avatarUrl?: string;
-  lastActive?: string;
+  avatarUrl: string;
 }
 
 export function UsersPage() {
@@ -105,76 +104,11 @@ export function UsersPage() {
         // const response = await fetch('/api/users')
         // const data = await response.json()
 
-        // Mock data for demonstration
-        const mockUsers: User[] = [
-          {
-            id: "1",
-            name: "John Doe",
-            email: "john.doe@example.com",
-            role: "admin",
-            status: "active",
-            avatarUrl: "/placeholder.svg?height=40&width=40",
-            lastActive: "2023-10-15T14:30:00Z",
-          },
-          {
-            id: "2",
-            name: "Jane Smith",
-            email: "jane.smith@example.com",
-            role: "manager",
-            status: "active",
-            avatarUrl: "/placeholder.svg?height=40&width=40",
-            lastActive: "2023-10-14T09:45:00Z",
-          },
-          {
-            id: "3",
-            name: "Robert Johnson",
-            email: "robert.johnson@example.com",
-            role: "contributor",
-            status: "pending",
-            avatarUrl: "/placeholder.svg?height=40&width=40",
-          },
-          {
-            id: "4",
-            name: "Emily Davis",
-            email: "emily.davis@example.com",
-            role: "contributor",
-            status: "active",
-            avatarUrl: "/placeholder.svg?height=40&width=40",
-            lastActive: "2023-10-10T16:20:00Z",
-          },
-          {
-            id: "5",
-            name: "Michael Wilson",
-            email: "michael.wilson@example.com",
-            role: "manager",
-            status: "disabled",
-            avatarUrl: "/placeholder.svg?height=40&width=40",
-            lastActive: "2023-09-28T11:15:00Z",
-          },
-          {
-            id: "6",
-            name: "Sarah Brown",
-            email: "sarah.brown@example.com",
-            role: "contributor",
-            status: "pending",
-            avatarUrl: "/placeholder.svg?height=40&width=40",
-          },
-          {
-            id: "7",
-            name: "David Miller",
-            email: "david.miller@example.com",
-            role: "contributor",
-            status: "active",
-            avatarUrl: "/placeholder.svg?height=40&width=40",
-            lastActive: "2023-10-12T13:40:00Z",
-          },
-        ];
-
-        // Simulate API delay
-        setTimeout(() => {
-          setUsers(mockUsers);
-          setIsLoading(false);
-        }, 800);
+        const response = await axios.get("/api/users");
+        const data = response.data.users;
+        console.log(data[0].status);
+        setUsers(data);
+        setIsLoading(false);
       } catch (error) {
         console.error("Error fetching users:", error);
         setIsLoading(false);
@@ -204,6 +138,7 @@ export function UsersPage() {
           });
           console.log(emailResponse.data);
         } catch (emailErr) {
+          console.log(emailErr);
           // If sending the invite fails, delete the created user to rollback
           await axios.delete("/api/delete-user", {
             data: { email: newUserEmail },
@@ -221,7 +156,7 @@ export function UsersPage() {
 
   const handleEditUser = (user: User) => {
     setSelectedUser(user);
-    setNewUserName(user.name);
+    setNewUserName(user.username);
     setNewUserEmail(user.email);
     setNewUserRole(user.role);
     setIsEditUserDialogOpen(true);
@@ -262,15 +197,15 @@ export function UsersPage() {
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
       // Add new user to the list
-      const newUser: User = {
-        id: Math.random().toString(36).substring(2, 9),
-        name: newUserName,
-        email: newUserEmail,
-        role: newUserRole,
-        status: "pending",
-      };
+      // const newUser: User = {
+      //   id: Math.random().toString(36).substring(2, 9),
+      //   username: newUserName,
+      //   email: newUserEmail,
+      //   role: newUserRole,
+      //   status: "pending",
+      // };
 
-      setUsers([...users, newUser]);
+      // setUsers([...users, newUser]);
       setIsAddUserDialogOpen(false);
       setIsSubmitting(false);
     } catch (error) {
@@ -346,7 +281,7 @@ export function UsersPage() {
   // Filter users based on search term and filters
   const filteredUsers = users.filter((user) => {
     const matchesSearch =
-      user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
       user.email.toLowerCase().includes(searchTerm.toLowerCase());
 
     const matchesStatus =
@@ -355,19 +290,6 @@ export function UsersPage() {
 
     return matchesSearch && matchesStatus && matchesRole;
   });
-
-  const formatDate = (dateString?: string) => {
-    if (!dateString) return "Never";
-
-    const date = new Date(dateString);
-    return new Intl.DateTimeFormat("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    }).format(date);
-  };
 
   const getStatusBadge = (status: UserStatus) => {
     switch (status) {
@@ -685,8 +607,8 @@ export function UsersPage() {
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
               This will permanently delete the user{" "}
-              <strong>{selectedUser?.name}</strong> and remove all their access.
-              This action cannot be undone.
+              <strong>{selectedUser?.username}</strong> and remove all their
+              access. This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -754,13 +676,15 @@ export function UsersPage() {
                   <div className="flex items-center gap-3">
                     <Avatar>
                       <AvatarImage
-                        src={user.avatarUrl || "/placeholder.svg"}
-                        alt={user.name}
+                        src={user?.avatarUrl || "/placeholder.svg"}
+                        alt={user.username}
                       />
-                      <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
+                      <AvatarFallback>
+                        {getInitials(user.username)}
+                      </AvatarFallback>
                     </Avatar>
                     <div>
-                      <p className="font-medium">{user.name}</p>
+                      <p className="font-medium">{user.username}</p>
                       <p className="text-sm text-muted-foreground">
                         {user.email}
                       </p>
@@ -858,7 +782,7 @@ export function UsersPage() {
                   </DropdownMenu>
                 </TableCell>
                 <TableCell className="text-muted-foreground">
-                  {formatDate(user.lastActive)}
+                  {/* {formatDate(user.lastActive)} */}
                 </TableCell>
                 <TableCell className="text-right">
                   <DropdownMenu>
@@ -910,12 +834,14 @@ export function UsersPage() {
                   <Avatar>
                     <AvatarImage
                       src={user.avatarUrl || "/placeholder.svg"}
-                      alt={user.name}
+                      alt={user.username}
                     />
-                    <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
+                    <AvatarFallback>
+                      {getInitials(user.username)}
+                    </AvatarFallback>
                   </Avatar>
                   <div>
-                    <p className="font-medium">{user.name}</p>
+                    <p className="font-medium">{user.username}</p>
                     <p className="text-sm text-muted-foreground">
                       {user.email}
                     </p>
@@ -972,7 +898,7 @@ export function UsersPage() {
                 <p className="text-sm font-medium text-muted-foreground">
                   Last Active
                 </p>
-                <p className="text-sm mt-1">{formatDate(user.lastActive)}</p>
+                {/* <p className="text-sm mt-1">{formatDate(user.lastActive)}</p> */}
               </div>
 
               <div className="flex gap-2 mt-4">

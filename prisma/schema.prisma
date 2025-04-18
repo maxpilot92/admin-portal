@@ -22,6 +22,7 @@ model User {
   status             String               @default("pending")
   createdAt          DateTime             @default(now())
   updatedAt          DateTime             @updatedAt
+  avatarUrl          String?
   blog               Blog[]
   PasswordResetToken PasswordResetToken[]
 }
@@ -90,4 +91,33 @@ model PasswordResetToken {
 
   @@index([token])
   @@index([userId])
+}
+
+model Team {
+  id          String   @id @default(uuid())
+  name        String
+  role        String
+  image       String?
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Testimonial {
+  id          String   @id @default(uuid())
+  name        String
+  role        String
+  image       String?
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Service {
+  id          String   @id @default(uuid())
+  title       String
+  description String
+  image       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }

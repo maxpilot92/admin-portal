@@ -31,16 +31,6 @@ export default function ResetPasswordPage() {
   const param = useParams();
   const { token } = param;
 
-  if (!token) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
-        <p className="text-sm text-muted-foreground">
-          Invalid or expired link. Please request a new password reset link.
-        </p>
-      </div>
-    );
-  }
-
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -64,6 +54,10 @@ export default function ResetPasswordPage() {
       met: /[^A-Za-z0-9]/.test(password),
     },
   ];
+
+  if (!token) {
+    throw new Error("Token is required");
+  }
 
   // Calculate password strength
   useEffect(() => {
@@ -168,7 +162,7 @@ export default function ResetPasswordPage() {
               Invalid Link
             </CardTitle>
             <CardDescription className="text-center">
-              We couldn't verify your password reset link.
+              We couldn&apos;t verify your password reset link.
             </CardDescription>
           </CardHeader>
           <CardContent>
