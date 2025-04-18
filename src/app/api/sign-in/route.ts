@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { generateResetToken } from "@/lib/jwt";
 
 export async function POST(request: NextRequest) {
   try {
@@ -28,7 +29,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    return NextResponse.json({ data: existingUser }, { status: 200 });
+    const token = generateResetToken(existingUser.id);
+
+    const res = NextResponse.json({ data: existingUser }, { status: 200 });
+
+    res.cookies.set("token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      path: "/",
+      maxAge: 60 * 60 * 24 * 7,
+      sameSite: "lax",
+    });
+
+    return res;
   } catch (error) {
     console.error("Error creating user:", error);
     return NextResponse.json(

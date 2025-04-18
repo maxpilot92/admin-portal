@@ -14,14 +14,16 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(uuid())
-  role      String
-  name      String?
-  email     String   @unique
-  password  String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  blog      Blog[]
+  id                 String               @id @default(uuid())
+  role               String
+  username           String
+  email              String               @unique
+  password           String?
+  status             String               @default("pending")
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+  blog               Blog[]
+  PasswordResetToken PasswordResetToken[]
 }
 
 model Category {
@@ -75,4 +77,17 @@ model Screenshot {
   portfolioId String
   portfolio   Portfolio @relation(fields: [portfolioId], references: [id])
   createdAt   DateTime  @default(now())
+}
+
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([token])
+  @@index([userId])
 }
