@@ -33,6 +33,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import axios from "axios";
 import { MediaItem } from "@/components/media-page";
+import Image from "next/image";
 
 interface ICategory {
   id: string;
@@ -417,7 +418,9 @@ export default function EditBlogPage() {
                           {selectedMedia ? (
                             <div className="space-y-2 w-full">
                               <div className="aspect-video rounded-md overflow-hidden bg-muted">
-                                <img
+                                <Image
+                                  height={36}
+                                  width={36}
                                   src={selectedMedia.url || "/placeholder.svg"}
                                   alt={selectedMedia.title}
                                   className="w-full h-full object-cover"
@@ -474,7 +477,9 @@ export default function EditBlogPage() {
                                   )
                                 }
                               >
-                                <img
+                                <Image
+                                  height={36}
+                                  width={36}
                                   src={media.url || "/placeholder.svg"}
                                   alt={media.title}
                                   className="w-full h-full object-cover"

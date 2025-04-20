@@ -5,6 +5,7 @@ import type React from "react";
 import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import {
   BarChart3,
   FileImage,
@@ -282,7 +283,9 @@ export function Sidebar({ open, onOpenChange }: SidebarProps) {
         <div className="border-t p-4">
           <div className="flex items-center gap-3">
             <div className="h-9 w-9 rounded-full bg-muted">
-              <img
+              <Image
+                width={36}
+                height={36}
                 src="/placeholder.svg?height=36&width=36"
                 alt="User avatar"
                 className="rounded-full"
