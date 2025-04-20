@@ -6,11 +6,12 @@ const errorResponse = (message: string, status: number) =>
 
 export async function POST(request: NextRequest) {
   try {
-    const { name } = await request.json();
-    if (!name) return errorResponse("Category name is required", 400);
+    const { name, categoryFor } = await request.json();
+    if (!name || !categoryFor)
+      return errorResponse("Category name and for is required", 400);
 
     const category = await prisma.category.create({
-      data: { name },
+      data: { name, categoryFor },
     });
 
     return NextResponse.json({ status: "success", data: category });
@@ -21,10 +22,12 @@ export async function POST(request: NextRequest) {
 }
 
 // GET /api/category
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
+    const categoryFor = req.nextUrl.searchParams.get("for");
+    if (!categoryFor) return errorResponse("Category for is required", 400);
     const categories = await prisma.category.findMany({
-      include: { blog: true },
+      where: { categoryFor },
       orderBy: { createdAt: "desc" },
     });
 

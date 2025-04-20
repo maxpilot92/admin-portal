@@ -1,13 +1,26 @@
 import prisma from "@/lib/prisma";
+import { verify } from "jsonwebtoken";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(request: NextRequest) {
   try {
-    const id = request.nextUrl.searchParams.get("userId");
-    if (id) {
+    const singleUser = request.nextUrl.searchParams.get("singleUser");
+    if (singleUser) {
+      const token = request.cookies.get("token")?.value;
+      if (!token) {
+        return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+      }
+      const JWT_SECRET = process.env.JWT_SECRET;
+      if (!JWT_SECRET) {
+        return NextResponse.json(
+          { message: "JWT secret not configured" },
+          { status: 500 }
+        );
+      }
+      const decoded = verify(token, JWT_SECRET) as { userId: string };
       const user = await prisma.user.findUnique({
         where: {
-          id,
+          id: decoded.userId,
         },
       });
 

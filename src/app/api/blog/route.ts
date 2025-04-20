@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
         ...(authorId && { User: { connect: { id: authorId } } }),
         ...(categoryId && { Category: { connect: { id: categoryId } } }),
       },
-      include: { User: true, Category: true }, // Include relations
+      include: { User: true }, // Include relations
     });
 
     return NextResponse.json(
@@ -53,7 +53,7 @@ export async function GET(request: NextRequest) {
     if (blogId) {
       const blog = await prisma.blog.findUnique({
         where: { id: blogId },
-        include: { User: true, Category: true },
+        include: { User: true },
       });
       return blog
         ? NextResponse.json({ status: "success", data: blog })
@@ -61,7 +61,7 @@ export async function GET(request: NextRequest) {
     }
 
     const blogs = await prisma.blog.findMany({
-      include: { User: true, Category: true },
+      include: { User: true },
     });
 
     return NextResponse.json({ status: "success", data: blogs });
@@ -99,7 +99,7 @@ export async function PATCH(request: NextRequest) {
           Category: { connect: { id: categoryId } },
         }),
       },
-      include: { User: true, Category: true },
+      include: { User: true },
     });
 
     return NextResponse.json({ status: "success", data: updatedBlog });

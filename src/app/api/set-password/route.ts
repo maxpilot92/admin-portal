@@ -13,7 +13,7 @@ export async function PATCH(req: NextRequest) {
 
     const user = await prisma.user.update({
       where: { email },
-      data: { password, status: "Active" },
+      data: { password, status: "active" },
     });
 
     if (!user) {

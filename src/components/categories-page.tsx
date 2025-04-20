@@ -62,7 +62,7 @@ type Category = {
   postCount: number; // Just for UI display
 };
 
-export function CategoriesPage() {
+export function CategoriesPage({ categoryFor }: { categoryFor: string }) {
   const [categories, setCategories] = useState<Category[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -82,7 +82,7 @@ export function CategoriesPage() {
   async function fetchCategories() {
     setLoading(true);
     try {
-      const response = await axios.get("/api/category");
+      const response = await axios.get(`/api/category?for=${categoryFor}`);
       if (response.data && response.data.data) {
         setCategories(response.data.data);
       }
@@ -119,8 +119,9 @@ export function CategoriesPage() {
     setIsSubmitting(true);
 
     try {
-      const response = await axios.post("/api/category", {
+      const response = await axios.post(`/api/category`, {
         name: categoryName,
+        categoryFor,
       });
 
       if (response.data.status === "success") {

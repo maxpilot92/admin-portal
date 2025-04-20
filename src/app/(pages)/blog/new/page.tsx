@@ -122,6 +122,7 @@ export default function NewBlogPage() {
     try {
       const response = await axios.post("/api/category", {
         name: categoryName,
+        categoryFor: "blog",
       });
       if (response.data.status === "success") {
         fetchCategories();
@@ -135,7 +136,7 @@ export default function NewBlogPage() {
 
   async function fetchCategories() {
     try {
-      const response = await axios.get("/api/category");
+      const response = await axios.get(`/api/category?for=blog`);
       console.log(response);
       setCategories(response.data.data);
     } catch (error) {

@@ -94,6 +94,15 @@ export default function ServicesPage() {
     }).format(date);
   };
 
+  function isValidUrl(url: string) {
+    try {
+      new URL(url);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
   const handleEditService = (serviceId: string) => {
     router.push(`/services/edit/${serviceId}`);
   };
@@ -193,7 +202,11 @@ export default function ServicesPage() {
                             <Image
                               width={40}
                               height={40}
-                              src={service.image || "/placeholder.svg"}
+                              src={
+                                isValidUrl(service.image)
+                                  ? service.image
+                                  : "/placeholder.svg"
+                              }
                               alt={service.title}
                               className="h-full w-full object-cover"
                             />

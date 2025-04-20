@@ -502,7 +502,7 @@ export function UsersPage() {
                     Adding...
                   </>
                 ) : (
-                  <div onClick={handleAddUser}>
+                  <div className="flex " onClick={handleAddUser}>
                     <UserPlus className="mr-2 h-4 w-4" />
                     Add & Invite
                   </div>
