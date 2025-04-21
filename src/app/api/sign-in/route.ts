@@ -5,6 +5,7 @@ import { generateResetToken } from "@/lib/jwt";
 export async function POST(request: NextRequest) {
   try {
     const { email, password } = await request.json();
+
     if (!email || !password) {
       return new Response(
         JSON.stringify({ message: "Email and password are required" }),
@@ -15,7 +16,6 @@ export async function POST(request: NextRequest) {
     const existingUser = await prisma.user.findUnique({
       where: {
         email,
-        password,
       },
     });
 
@@ -28,6 +28,7 @@ export async function POST(request: NextRequest) {
         { status: 404 }
       );
     }
+    console.log(existingUser);
 
     const token = generateResetToken(existingUser.id);
 

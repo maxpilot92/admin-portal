@@ -34,9 +34,10 @@ export default function LoginPage() {
     e.preventDefault();
     setError(null);
     setIsSubmitting(true);
+    console.log("clicked");
 
     try {
-      await axios.post("api/sign-in", {
+      await axios.post("/api/sign-in", {
         email,
         password,
       });
