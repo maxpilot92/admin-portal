@@ -1,45 +1,54 @@
 "use client";
 
-import {
-  ArrowDown,
-  ArrowUp,
-  BarChart3,
-  FileText,
-  FileImage,
-  Users,
-} from "lucide-react";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { ArrowDown, ArrowUp, FileText, FileImage, Users } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageHeader } from "@/components/page-header";
-import {
-  LineChart,
-  Line,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-} from "recharts";
-
-const data = [
-  { name: "Jan", revenue: 4000, users: 2400, blogs: 24, media: 18 },
-  { name: "Feb", revenue: 3000, users: 1398, blogs: 13, media: 12 },
-  { name: "Mar", revenue: 2000, users: 9800, blogs: 22, media: 19 },
-  { name: "Apr", revenue: 2780, users: 3908, blogs: 20, media: 15 },
-  { name: "May", revenue: 1890, users: 4800, blogs: 21, media: 17 },
-  { name: "Jun", revenue: 2390, users: 3800, blogs: 25, media: 21 },
-  { name: "Jul", revenue: 3490, users: 4300, blogs: 21, media: 19 },
-];
+import { useEffect, useState } from "react";
+import axios from "axios";
 
 export function DashboardPage() {
+  const [totalUsers, setTotalUsers] = useState(0);
+  const [totalBlogs, setTotalBlogs] = useState(0);
+  const [totalMedia, setTotalMedia] = useState(0);
+  useEffect(() => {
+    const getUser = async () => {
+      try {
+        const response = await axios.get("/api/users");
+        const num = response.data.users.length;
+        setTotalUsers(num);
+      } catch (error) {
+        console.error("Error fetching users:", error);
+      }
+    };
+
+    getUser();
+  }, []);
+
+  useEffect(() => {
+    const getBlogs = async () => {
+      try {
+        const response = await axios.get("/api/blog");
+        const num = response.data.data.length;
+        setTotalBlogs(num);
+      } catch (error) {
+        console.error("Error fetching blogs:", error);
+      }
+    };
+
+    getBlogs();
+  }, []);
+  useEffect(() => {
+    const getMedia = async () => {
+      try {
+        const response = await axios.get("/api/media");
+        const num = response.data.data.length;
+        setTotalMedia(num);
+      } catch (error) {
+        console.error("Error fetching media:", error);
+      }
+    };
+    getMedia();
+  }, []);
   return (
     <div className="space-y-6">
       <PageHeader
@@ -47,14 +56,14 @@ export function DashboardPage() {
         text="Overview of your content management metrics"
       />
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Users</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">2,350</div>
+            <div className="text-2xl font-bold">{totalUsers}</div>
             <p className="text-xs text-muted-foreground">
               <span className="text-emerald-500 flex items-center">
                 <ArrowUp className="mr-1 h-4 w-4" />
@@ -70,7 +79,7 @@ export function DashboardPage() {
             <FileText className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">146</div>
+            <div className="text-2xl font-bold">{totalBlogs}</div>
             <p className="text-xs text-muted-foreground">
               <span className="text-emerald-500 flex items-center">
                 <ArrowUp className="mr-1 h-4 w-4" />
@@ -86,7 +95,7 @@ export function DashboardPage() {
             <FileImage className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">234</div>
+            <div className="text-2xl font-bold">{totalMedia}</div>
             <p className="text-xs text-muted-foreground">
               <span className="text-rose-500 flex items-center">
                 <ArrowDown className="mr-1 h-4 w-4" />
@@ -96,25 +105,9 @@ export function DashboardPage() {
             </p>
           </CardContent>
         </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Now</CardTitle>
-            <BarChart3 className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">573</div>
-            <p className="text-xs text-muted-foreground">
-              <span className="text-emerald-500 flex items-center">
-                <ArrowUp className="mr-1 h-4 w-4" />
-                +201
-              </span>{" "}
-              from last hour
-            </p>
-          </CardContent>
-        </Card>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+      {/* <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
         <Card className="col-span-4">
           <CardHeader>
             <CardTitle>Content Overview</CardTitle>
@@ -173,9 +166,9 @@ export function DashboardPage() {
             </ResponsiveContainer>
           </CardContent>
         </Card>
-      </div>
+      </div> */}
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      {/* <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         <Card>
           <CardHeader>
             <CardTitle>Recent Activities</CardTitle>
@@ -293,7 +286,7 @@ export function DashboardPage() {
             </div>
           </CardContent>
         </Card>
-      </div>
+      </div> */}
     </div>
   );
 }

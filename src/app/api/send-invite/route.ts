@@ -1,12 +1,13 @@
-// app/api/auth/invite-user/route.ts
 import { generateResetToken } from "@/lib/jwt";
 import { sendEmail } from "@/lib/email";
 import prisma from "@/lib/prisma";
 import crypto from "crypto";
 
 export async function POST(req: Request) {
-  const { email } = await req.json();
+  const data = await req.json();
 
+  const email = data.email;
+  console.log("data:", data);
   if (!email) {
     return Response.json({ message: "Email is required" }, { status: 400 });
   }
@@ -21,7 +22,7 @@ export async function POST(req: Request) {
   const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
 
   // 🔐 Optional: Store token in DB
-  const pass = await prisma.passwordResetToken.create({
+  await prisma.passwordResetToken.create({
     data: {
       userId: user.id,
       token: hashedToken,
@@ -29,10 +30,12 @@ export async function POST(req: Request) {
     },
   });
 
-  console.log("Password reset token created:", pass);
-
   const resetUrl = `${process.env.NEXT_PUBLIC_DOMAIN}/auth/reset-password/${token}`;
-  await sendEmail(email, resetUrl);
+  const sentInvite = await sendEmail(email, resetUrl);
+
+  if (!sentInvite) {
+    return Response.json({ message: "Error sending email" }, { status: 500 });
+  }
 
   return Response.json({ message: "Invitation sent" });
 }

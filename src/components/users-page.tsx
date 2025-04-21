@@ -133,9 +133,18 @@ export function UsersPage() {
         console.log(signUpResponse.data);
 
         try {
-          const emailResponse = await axios.post("/api/send-invite", {
-            email: newUserEmail,
-          });
+          const emailResponse = await axios.post(
+            "/api/send-invite",
+            {
+              email: newUserEmail,
+            },
+            {
+              headers: {
+                "Content-Type": "application/json",
+              },
+            }
+          );
+
           console.log(emailResponse.data);
         } catch (emailErr) {
           console.log(emailErr);
@@ -151,6 +160,8 @@ export function UsersPage() {
       }
     } catch (error) {
       console.log(error);
+    } finally {
+      setIsAddUserDialogOpen(false);
     }
   };
 
@@ -179,39 +190,6 @@ export function UsersPage() {
       u.id === user.id ? { ...u, role: newRole } : u
     );
     setUsers(updatedUsers);
-  };
-
-  const handleSubmitAdd = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-
-    try {
-      // In a real app, this would be an API call
-      // const response = await fetch('/api/users', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({ name: newUserName, email: newUserEmail, role: newUserRole })
-      // })
-
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      // Add new user to the list
-      // const newUser: User = {
-      //   id: Math.random().toString(36).substring(2, 9),
-      //   username: newUserName,
-      //   email: newUserEmail,
-      //   role: newUserRole,
-      //   status: "pending",
-      // };
-
-      // setUsers([...users, newUser]);
-      setIsAddUserDialogOpen(false);
-      setIsSubmitting(false);
-    } catch (error) {
-      console.error("Error adding user:", error);
-      setIsSubmitting(false);
-    }
   };
 
   const handleSubmitEdit = async (e: React.FormEvent) => {
@@ -441,7 +419,7 @@ export function UsersPage() {
               Add a new user and send them an invitation email.
             </DialogDescription>
           </DialogHeader>
-          <form onSubmit={handleSubmitAdd}>
+          <form onSubmit={handleAddUser}>
             <div className="grid gap-4 py-4">
               <div className="grid gap-2">
                 <Label htmlFor="name">Full Name</Label>
