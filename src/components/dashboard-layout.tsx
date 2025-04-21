@@ -9,12 +9,11 @@ import { Navbar } from "@/components/navbar";
 interface DashboardLayoutProps {
   children: React.ReactNode;
 }
-
 export function DashboardLayout({ children }: DashboardLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
   return (
-    <div className="flex h-screen overflow-hidden bg-background">
+    <div className="flex overflow-hidden bg-background">
       <Sidebar open={sidebarOpen} onOpenChange={setSidebarOpen} />
       <div className="flex flex-1 flex-col overflow-hidden">
         <Navbar onSidebarToggle={() => setSidebarOpen(!sidebarOpen)} />

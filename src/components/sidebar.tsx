@@ -115,11 +115,11 @@ export function Sidebar({ open, onOpenChange }: SidebarProps) {
           href: "/blog/categories",
           active: pathname === "/blog/categories",
         },
-        {
-          label: "Tags",
-          href: "/blog/tags",
-          active: pathname === "/blog/tags",
-        },
+        // {
+        //   label: "Tags",
+        //   href: "/blog/tags",
+        //   active: pathname === "/blog/tags",
+        // },
       ],
     },
     {
@@ -249,7 +249,10 @@ export function Sidebar({ open, onOpenChange }: SidebarProps) {
           </Button>
         </div>
         <ScrollArea className="flex-1 py-2">
-          <nav className="grid gap-1 px-2" aria-label="Main Navigation">
+          <nav
+            className="grid gap-1 px-2 h-[calc(100vh-9rem)]"
+            aria-label="Main Navigation"
+          >
             {routes.map((route) => (
               <div key={route.label} className="mb-1">
                 {route.children ? (

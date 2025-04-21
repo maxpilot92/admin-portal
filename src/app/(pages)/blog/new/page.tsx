@@ -4,7 +4,7 @@ import type React from "react";
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Check, ImageIcon, Loader2, Plus } from "lucide-react";
+import { ArrowLeft, Check, ImageIcon, Loader2 } from "lucide-react";
 import { DashboardLayout } from "@/components/dashboard-layout";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
@@ -24,7 +24,6 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -57,9 +56,7 @@ export default function NewBlogPage() {
   const [categoryId, setCategoryId] = useState("");
   const [tagInput, setTagInput] = useState("");
   const [published, setPublished] = useState(false);
-  const [categoryName, setCategoryName] = useState("");
   const [categories, setCategories] = useState<ICategory[]>();
-  const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false);
   const [mediaItems, setMediaItems] = useState<MediaItem[]>([]);
   const [url, setUrl] = useState("");
 
@@ -114,23 +111,6 @@ export default function NewBlogPage() {
       console.log(error);
     } finally {
       setIsSubmitting(false);
-    }
-  };
-
-  const handleCategorySave = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      const response = await axios.post("/api/category", {
-        name: categoryName,
-        categoryFor: "blog",
-      });
-      if (response.data.status === "success") {
-        fetchCategories();
-        setIsCategoryDialogOpen(false); // Close dialog
-        setCategoryName(""); // Reset input field
-      }
-    } catch (error) {
-      console.log(error);
     }
   };
 
@@ -253,49 +233,6 @@ export default function NewBlogPage() {
                           ))}
                         </SelectContent>
                       </Select>
-
-                      <Dialog
-                        open={isCategoryDialogOpen}
-                        onOpenChange={setIsCategoryDialogOpen}
-                      >
-                        <DialogTrigger asChild>
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            className="shrink-0"
-                          >
-                            <Plus className="h-4 w-4" />
-                            <span className="sr-only">Add new category</span>
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent className="sm:max-w-[425px]">
-                          <DialogHeader>
-                            <DialogTitle>Add New Category</DialogTitle>
-                            <DialogDescription>
-                              Create a new category for your blog post.
-                            </DialogDescription>
-                          </DialogHeader>
-                          <form onSubmit={handleCategorySave}>
-                            <div className="grid gap-4 py-4">
-                              <div className="grid gap-2">
-                                <Label htmlFor="new-category-name">Name</Label>
-                                <Input
-                                  id="new-category-name"
-                                  value={categoryName}
-                                  onChange={(e) =>
-                                    setCategoryName(e.target.value)
-                                  }
-                                  placeholder="Enter category name"
-                                  required
-                                />
-                              </div>
-                            </div>
-                            <DialogFooter>
-                              <Button type="submit">Add Category</Button>
-                            </DialogFooter>
-                          </form>
-                        </DialogContent>
-                      </Dialog>
                     </div>
                   </div>
 
@@ -468,3 +405,33 @@ export default function NewBlogPage() {
     </DashboardLayout>
   );
 }
+
+// function CategoryForm({
+//   handleCategorySave,
+//   categoryName,
+//   setCategoryName,
+// }: {
+//   handleCategorySave: (e: React.FormEvent) => void;
+//   categoryName: string;
+//   setCategoryName: React.Dispatch<React.SetStateAction<string>>;
+// }) {
+//   return (
+//     <form onSubmit={handleCategorySave}>
+//       <div className="grid gap-4 py-4">
+//         <div className="grid gap-2">
+//           <Label htmlFor="new-category-name">Name</Label>
+//           <Input
+//             id="new-category-name"
+//             value={categoryName}
+//             onChange={(e) => setCategoryName(e.target.value)}
+//             placeholder="Enter category name"
+//             required
+//           />
+//         </div>
+//       </div>
+//       <DialogFooter>
+//         <Button type="submit">Add Category</Button>
+//       </DialogFooter>
+//     </form>
+//   );
+// }
