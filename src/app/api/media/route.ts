@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
         title,
       },
     });
-
+    // push
     // Update the record to include the URL for retrieval
     const updatedMedia = await prisma.media.update({
       where: { id: newMedia.id },
