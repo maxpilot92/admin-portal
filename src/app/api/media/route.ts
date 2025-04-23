@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
     // Update the record to include the URL for retrieval
     const updatedMedia = await prisma.media.update({
       where: { id: newMedia.id },
-      data: { url: `${origin}/api/media?mediaId=${newMedia.id}` },
+      data: { url: `/api/media?mediaId=${newMedia.id}` },
     });
 
     return NextResponse.json(updatedMedia, { status: 201 });
