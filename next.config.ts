@@ -13,7 +13,7 @@ const nextConfig: NextConfig = {
     return [
       {
         source: "/api/:path*",
-        destination: "http://localhost:3000/:path*", // 👈 AWS API IP
+        destination: "http://3.26.41.86/:path*", // 👈 AWS API IP
       },
     ];
   },
