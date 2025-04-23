@@ -2,7 +2,7 @@
 import { mergeAttributes, Node } from "@tiptap/core";
 
 export interface CustomImageOptions {
-  HTMLAttributes: Record<string, any>;
+  HTMLAttributes: Record<string, unknown>;
 }
 
 declare module "@tiptap/core" {

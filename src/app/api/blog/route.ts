@@ -7,7 +7,7 @@ const errorResponse = (message: string, status: number) =>
 
 export async function POST(request: NextRequest) {
   try {
-    const { title, content, authorId, published, tags, categoryId, url } =
+    const { title, content, authorId, published, tags, url } =
       await request.json();
 
     // console.log("Request body:", {
@@ -31,7 +31,6 @@ export async function POST(request: NextRequest) {
         published: published || false,
         tags: tags || [],
         ...(authorId && { User: { connect: { id: authorId } } }),
-        ...(categoryId && { Category: { connect: { id: categoryId } } }),
       },
       include: { User: true }, // Include relations
     });

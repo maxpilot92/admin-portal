@@ -57,7 +57,6 @@ import {
   AlignJustify,
 } from "lucide-react";
 import "./styles.scss";
-import { init } from "next/dist/compiled/webpack/webpack";
 
 // Default content for the editor
 const DEFAULT_EDITOR_CONTENT = `
@@ -155,6 +154,10 @@ const Editor: React.FC<EditorProps> = ({ initialContent, setContent }) => {
         class: "blog-editor-content outline-none",
       },
     },
+    onUpdate: ({ editor }) => {
+      // Update content whenever the editor changes
+      setContent(editor.getHTML());
+    },
   });
 
   const addImage = useCallback(
@@ -221,12 +224,6 @@ const Editor: React.FC<EditorProps> = ({ initialContent, setContent }) => {
   }, []);
 
   if (!editor) return null;
-
-  const handleSave = () => {
-    if (!editor) return;
-    const html = editor.getHTML();
-    setContent(html);
-  };
 
   return (
     <div className="space-y-4">
@@ -475,9 +472,6 @@ const Editor: React.FC<EditorProps> = ({ initialContent, setContent }) => {
                 title="Redo"
               >
                 <Redo size={16} />
-              </Button>
-              <Button size="sm" variant="default" onClick={handleSave}>
-                Save
               </Button>
             </div>
           </div>

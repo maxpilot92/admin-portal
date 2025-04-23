@@ -104,15 +104,15 @@ export default function NewBlogPage() {
     try {
       const response = await axios.post("/api/blog", {
         title,
-        content,
-        published,
+        content, // This will now contain the latest content
+        published: true, // Force publish state
         tags,
         categoryId,
         url,
         excerpt,
         seoTitle,
       });
-      console.log("Blog created successfully:", response);
+      console.log("Blog published successfully:", response);
       router.push("/blog");
     } catch (error) {
       console.log(error);
@@ -121,14 +121,15 @@ export default function NewBlogPage() {
     }
   };
 
-  const handleSaveAsDraft = async () => {
-    setPublished(false);
+  const handleSaveAsDraft = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+
     try {
-      setIsSubmitting(true);
       const response = await axios.post("/api/blog", {
         title,
-        content,
-        published: false, // Always false for drafts
+        content, // This will now contain the latest content
+        published: false, // Save as draft
         tags,
         categoryId,
         url,
@@ -174,8 +175,19 @@ export default function NewBlogPage() {
               <ArrowLeft className="mr-2 h-4 w-4" />
               Cancel
             </Button>
-            <Button variant="outline" onClick={handleSaveAsDraft}>
-              Save as Draft
+            <Button
+              variant="outline"
+              onClick={handleSaveAsDraft}
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                "Save as Draft"
+              )}
             </Button>
             <Button onClick={handleSubmit} disabled={isSubmitting}>
               {isSubmitting ? (
