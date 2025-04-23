@@ -34,6 +34,7 @@ import { Badge } from "@/components/ui/badge";
 import axios from "axios";
 import { MediaItem } from "@/components/media-page";
 import Image from "next/image";
+import Editor from "@/components/tiptap/editor";
 
 interface ICategory {
   id: string;
@@ -124,7 +125,7 @@ export default function EditBlogPage() {
 
   async function fetchCategories() {
     try {
-      const response = await axios.get("/api/category");
+      const response = await axios.get(`/api/category?for=blog`);
       setCategories(response.data.data);
     } catch (error) {
       console.log("Error fetching categories:", error);
@@ -155,6 +156,10 @@ export default function EditBlogPage() {
     setIsMediaDialogOpen(false);
   };
 
+  const updateContent = (htmlContent: string) => {
+    setContent(htmlContent);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -177,6 +182,29 @@ export default function EditBlogPage() {
     } catch (error) {
       console.error("Error updating blog post:", error);
       // Show error notification
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleSaveAsDraft = async () => {
+    setPublished(false);
+    try {
+      setIsSubmitting(true);
+      const response = await axios.patch(`/api/blog?blogId=${blogId}`, {
+        title,
+        content,
+        published: false, // Always false for drafts
+        tags,
+        categoryId,
+        url,
+        excerpt,
+        seoTitle,
+      });
+      console.log("Draft saved successfully:", response);
+      router.push("/blog");
+    } catch (error) {
+      console.log(error);
     } finally {
       setIsSubmitting(false);
     }
@@ -221,7 +249,7 @@ export default function EditBlogPage() {
               <ArrowLeft className="mr-2 h-4 w-4" />
               Cancel
             </Button>
-            <Button variant="outline" onClick={() => {}}>
+            <Button variant="outline" onClick={handleSaveAsDraft}>
               Save as Draft
             </Button>
             <Button onClick={handleSubmit} disabled={isSubmitting}>
@@ -268,13 +296,9 @@ export default function EditBlogPage() {
                       <TabsTrigger value="preview">Preview</TabsTrigger>
                     </TabsList>
                     <TabsContent value="write" className="mt-2">
-                      <Textarea
-                        id="content"
-                        placeholder="Write your blog post content here..."
-                        className="min-h-[400px]"
-                        required
-                        value={content}
-                        onChange={(e) => setContent(e.target.value)}
+                      <Editor
+                        setContent={updateContent}
+                        initialContent={content}
                       />
                     </TabsContent>
                     <TabsContent value="preview" className="mt-2">
@@ -398,7 +422,7 @@ export default function EditBlogPage() {
                       checked={published}
                       onCheckedChange={setPublished}
                     />
-                    <Label htmlFor="published">Published</Label>
+                    <Label htmlFor="published">Publish immediately</Label>
                   </div>
                 </div>
               </CardContent>
@@ -419,8 +443,8 @@ export default function EditBlogPage() {
                             <div className="space-y-2 w-full">
                               <div className="aspect-video rounded-md overflow-hidden bg-muted">
                                 <Image
-                                  height={36}
-                                  width={36}
+                                  width={200}
+                                  height={200}
                                   src={selectedMedia.url || "/placeholder.svg"}
                                   alt={selectedMedia.title}
                                   className="w-full h-full object-cover"
@@ -469,17 +493,10 @@ export default function EditBlogPage() {
                               }`}
                               onClick={() => handleSelectMedia(media)}
                             >
-                              <div
-                                className="aspect-video"
-                                onClick={() =>
-                                  setUrl(
-                                    process.env.NEXT_PUBLIC_DOMAIN + media.url
-                                  )
-                                }
-                              >
+                              <div className="aspect-video">
                                 <Image
-                                  height={36}
-                                  width={36}
+                                  width={200}
+                                  height={200}
                                   src={media.url || "/placeholder.svg"}
                                   alt={media.title}
                                   className="w-full h-full object-cover"

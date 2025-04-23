@@ -33,6 +33,7 @@ import { Badge } from "@/components/ui/badge";
 import axios from "axios";
 import { MediaItem } from "@/components/media-page";
 import Image from "next/image";
+import Editor from "@/components/tiptap/editor";
 
 interface ICategory {
   id: string;
@@ -59,6 +60,8 @@ export default function NewBlogPage() {
   const [categories, setCategories] = useState<ICategory[]>();
   const [mediaItems, setMediaItems] = useState<MediaItem[]>([]);
   const [url, setUrl] = useState("");
+  const [excerpt, setExcerpt] = useState("");
+  const [seoTitle, setSeoTitle] = useState("");
 
   const handleAddTag = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter" && tagInput.trim() !== "") {
@@ -90,12 +93,14 @@ export default function NewBlogPage() {
 
   const handleSelectMedia = (media: (typeof mediaItems)[0]) => {
     setSelectedMedia(media);
+    setUrl(process.env.NEXT_PUBLIC_DOMAIN + media.url);
     setIsMediaDialogOpen(false);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
+
     try {
       const response = await axios.post("/api/blog", {
         title,
@@ -104,6 +109,8 @@ export default function NewBlogPage() {
         tags,
         categoryId,
         url,
+        excerpt,
+        seoTitle,
       });
       console.log("Blog created successfully:", response);
       router.push("/blog");
@@ -112,6 +119,33 @@ export default function NewBlogPage() {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleSaveAsDraft = async () => {
+    setPublished(false);
+    try {
+      setIsSubmitting(true);
+      const response = await axios.post("/api/blog", {
+        title,
+        content,
+        published: false, // Always false for drafts
+        tags,
+        categoryId,
+        url,
+        excerpt,
+        seoTitle,
+      });
+      console.log("Draft saved successfully:", response);
+      router.push("/blog");
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const updateContent = (htmlContent: string) => {
+    setContent(htmlContent);
   };
 
   async function fetchCategories() {
@@ -127,6 +161,7 @@ export default function NewBlogPage() {
   useEffect(() => {
     fetchCategories();
   }, []);
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
@@ -139,7 +174,7 @@ export default function NewBlogPage() {
               <ArrowLeft className="mr-2 h-4 w-4" />
               Cancel
             </Button>
-            <Button variant="outline" onClick={() => {}}>
+            <Button variant="outline" onClick={handleSaveAsDraft}>
               Save as Draft
             </Button>
             <Button onClick={handleSubmit} disabled={isSubmitting}>
@@ -186,20 +221,17 @@ export default function NewBlogPage() {
                       <TabsTrigger value="preview">Preview</TabsTrigger>
                     </TabsList>
                     <TabsContent value="write" className="mt-2">
-                      <Textarea
-                        id="content"
-                        placeholder="Write your blog post content here..."
-                        className="min-h-[400px]"
-                        required
-                        value={content}
-                        onChange={(e) => setContent(e.target.value)}
-                      />
+                      <Editor setContent={updateContent} />
                     </TabsContent>
                     <TabsContent value="preview" className="mt-2">
                       <div className="border rounded-md p-4 min-h-[400px] prose dark:prose-invert max-w-none">
-                        <p className="text-muted-foreground">
-                          Content preview will appear here...
-                        </p>
+                        {content ? (
+                          <div dangerouslySetInnerHTML={{ __html: content }} />
+                        ) : (
+                          <p className="text-muted-foreground">
+                            Content preview will appear here...
+                          </p>
+                        )}
                       </div>
                     </TabsContent>
                   </Tabs>
@@ -217,17 +249,13 @@ export default function NewBlogPage() {
                       Category
                     </Label>
                     <div className="flex gap-2">
-                      <Select>
+                      <Select value={categoryId} onValueChange={setCategoryId}>
                         <SelectTrigger id="category">
                           <SelectValue placeholder="Select a category" />
                         </SelectTrigger>
                         <SelectContent>
                           {categories?.map((category) => (
-                            <SelectItem
-                              onClick={() => setCategoryId(category.id)}
-                              key={category.id}
-                              value={category.id}
-                            >
+                            <SelectItem key={category.id} value={category.id}>
                               {category.name}
                             </SelectItem>
                           ))}
@@ -344,14 +372,7 @@ export default function NewBlogPage() {
                               }`}
                               onClick={() => handleSelectMedia(media)}
                             >
-                              <div
-                                className="aspect-video"
-                                onClick={() =>
-                                  setUrl(
-                                    process.env.NEXT_PUBLIC_DOMAIN + media.url
-                                  )
-                                }
-                              >
+                              <div className="aspect-video">
                                 <Image
                                   width={200}
                                   height={200}
@@ -380,6 +401,8 @@ export default function NewBlogPage() {
                       id="excerpt"
                       placeholder="Write a short excerpt for your blog post..."
                       className="min-h-[100px]"
+                      value={excerpt}
+                      onChange={(e) => setExcerpt(e.target.value)}
                     />
                     <p className="text-sm text-muted-foreground">
                       A short summary of your post. This will be displayed on
@@ -391,7 +414,12 @@ export default function NewBlogPage() {
                     <Label htmlFor="seo-title" className="text-base">
                       SEO Title
                     </Label>
-                    <Input id="seo-title" placeholder="SEO optimized title" />
+                    <Input
+                      id="seo-title"
+                      placeholder="SEO optimized title"
+                      value={seoTitle}
+                      onChange={(e) => setSeoTitle(e.target.value)}
+                    />
                     <p className="text-sm text-muted-foreground">
                       The title that will appear in search engine results.
                     </p>
@@ -405,33 +433,3 @@ export default function NewBlogPage() {
     </DashboardLayout>
   );
 }
-
-// function CategoryForm({
-//   handleCategorySave,
-//   categoryName,
-//   setCategoryName,
-// }: {
-//   handleCategorySave: (e: React.FormEvent) => void;
-//   categoryName: string;
-//   setCategoryName: React.Dispatch<React.SetStateAction<string>>;
-// }) {
-//   return (
-//     <form onSubmit={handleCategorySave}>
-//       <div className="grid gap-4 py-4">
-//         <div className="grid gap-2">
-//           <Label htmlFor="new-category-name">Name</Label>
-//           <Input
-//             id="new-category-name"
-//             value={categoryName}
-//             onChange={(e) => setCategoryName(e.target.value)}
-//             placeholder="Enter category name"
-//             required
-//           />
-//         </div>
-//       </div>
-//       <DialogFooter>
-//         <Button type="submit">Add Category</Button>
-//       </DialogFooter>
-//     </form>
-//   );
-// }
