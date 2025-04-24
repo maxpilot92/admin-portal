@@ -31,7 +31,6 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import axios from "axios";
-import { MediaItem } from "@/components/media-page";
 import Image from "next/image";
 import Editor from "@/components/tiptap/editor";
 
@@ -40,6 +39,13 @@ interface ICategory {
   name: string;
   createdAt: string;
   updatedAt: string;
+}
+
+interface MediaItem {
+  id: string;
+  url: string;
+  data: string;
+  title: string;
 }
 
 export default function NewBlogPage() {

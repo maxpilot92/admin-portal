@@ -53,7 +53,7 @@ model Blog {
 model Media {
   id        String   @id @default(uuid())
   title     String
-  data      Bytes
+  public_id String?  @unique
   url       String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

@@ -53,7 +53,7 @@ export async function POST(request: Request) {
       .filter(Boolean);
 
     // 3. Pull out uploaded files
-    const files = data.getAll("images") as Blob[]; // Next.js gives you Blobs for file uploads
+    const screenshotUrls = data.getAll("images") as string[]; // Next.js gives you Blobs for file uploads
     if (!title || !description || technologies.length === 0) {
       return NextResponse.json(
         { error: "Missing required fields: title, description, technologies" },
@@ -61,30 +61,7 @@ export async function POST(request: Request) {
       );
     }
 
-    // 4. Upload each image to your Media table, collect full URLs
-    const host = request.headers.get("host") ?? "localhost:3000";
-    const protocol = host.includes("localhost") ? "http" : "https";
-
-    const screenshotUrls = await Promise.all(
-      files.map(async (file) => {
-        const arrayBuffer = await file.arrayBuffer();
-        const buffer = Buffer.from(arrayBuffer);
-
-        // create media record
-        const media = await prisma.media.create({
-          data: { title: "Portfolio Images", data: buffer },
-        });
-        // compute and save its public URL
-        const url = `${protocol}://${host}/api/media?mediaId=${media.id}`;
-        await prisma.media.update({
-          where: { id: media.id },
-          data: { url },
-        });
-        return url;
-      })
-    );
-
-    // 5. Create portfolio with related screenshots
+    // 4. Create portfolio with related screenshots
     const newPortfolio = await prisma.portfolio.create({
       data: {
         title,
@@ -132,30 +109,7 @@ export async function PATCH(request: NextRequest) {
       .map((t) => t.trim())
       .filter(Boolean);
 
-    const files = data.getAll("images") as Blob[];
-
-    const host = request.headers.get("host") ?? "localhost:3000";
-    const protocol = host.includes("localhost") ? "http" : "https";
-
-    const screenshotUrls = await Promise.all(
-      files.map(async (file) => {
-        const arrayBuffer = await file.arrayBuffer();
-        const buffer = Buffer.from(arrayBuffer);
-
-        const media = await prisma.media.create({
-          data: { title: "Portfolio Images", data: buffer },
-        });
-
-        const url = `${protocol}://${host}/api/media?mediaId=${media.id}`;
-
-        await prisma.media.update({
-          where: { id: media.id },
-          data: { url },
-        });
-
-        return url;
-      })
-    );
+    const screenshotUrls = data.getAll("images") as string[];
 
     const updated = await prisma.portfolio.update({
       where: { id },

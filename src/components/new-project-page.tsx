@@ -2,9 +2,9 @@
 
 import type React from "react";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Plus, Loader2 } from "lucide-react";
+import { ArrowLeft, Plus, Loader2, ImageIcon } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,8 +12,22 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent } from "@/components/ui/card";
-import { MultiImageUpload } from "@/components/multi-image-upload";
 import axios from "axios";
+import Image from "next/image";
+import {
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "./ui/dialog";
+import { Dialog, DialogTrigger } from "@radix-ui/react-dialog";
+
+interface MediaItem {
+  id: string;
+  url: string;
+  data: string;
+  title: string;
+}
 
 export function NewProjectPage() {
   const router = useRouter();
@@ -24,7 +38,14 @@ export function NewProjectPage() {
   const [liveUrl, setLiveUrl] = useState("");
   const [repoUrl, setRepoUrl] = useState("");
   const [featured, setFeatured] = useState(false);
-  const [images, setImages] = useState<File[]>([]);
+  const [images, setImages] = useState<(File | string)[]>([]);
+  const [mediaItems, setMediaItems] = useState<MediaItem[]>([]);
+  const [selectedMedia, setSelectedMedia] = useState<{
+    id: string;
+    title: string;
+    url: string;
+  } | null>(null);
+  const [isMediaDialogOpen, setIsMediaDialogOpen] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,6 +70,26 @@ export function NewProjectPage() {
       console.error("Error creating project:", error);
       setIsSubmitting(false);
     }
+  };
+
+  async function fetchMedia() {
+    try {
+      const response = await axios.get("/api/media");
+      const data = response.data.data;
+      setMediaItems(data);
+    } catch (error) {
+      console.log("Error fetching media:", error);
+    }
+  }
+
+  useEffect(() => {
+    fetchMedia();
+  }, []);
+
+  const handleSelectMedia = (media: (typeof mediaItems)[0]) => {
+    setSelectedMedia(media);
+    setImages((prev) => [...prev, media.url]);
+    setIsMediaDialogOpen(false);
   };
 
   return (
@@ -172,25 +213,86 @@ export function NewProjectPage() {
             </CardContent>
           </Card>
 
-          <Card>
-            <CardContent className="pt-6">
-              <div className="space-y-6">
-                <div className="grid gap-3">
-                  <Label className="text-base">Project Images</Label>
-                  <MultiImageUpload
-                    images={images}
-                    onChange={setImages}
-                    maxFiles={5}
-                    maxSize={5 * 1024 * 1024} // 5MB
-                  />
-                  <p className="text-sm text-muted-foreground">
-                    Upload up to 5 images. The first image will be used as the
-                    thumbnail.
-                  </p>
+          <div className="grid gap-3">
+            <Label className="text-base">Featured Image</Label>
+            <Dialog
+              open={isMediaDialogOpen}
+              onOpenChange={setIsMediaDialogOpen}
+            >
+              <DialogTrigger asChild>
+                <div className="border-2 border-dashed rounded-md p-6 flex flex-col items-center justify-center cursor-pointer hover:border-primary/50 transition-colors">
+                  {selectedMedia ? (
+                    <div className="space-y-2 w-full">
+                      <div className="aspect-video rounded-md overflow-hidden bg-muted">
+                        <Image
+                          width={200}
+                          height={200}
+                          src={selectedMedia.url || "/placeholder.svg"}
+                          alt={selectedMedia.title}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <p className="text-sm font-medium text-center">
+                        {selectedMedia.title}
+                      </p>
+                      <Button
+                        variant="outline"
+                        className="w-full"
+                        type="button"
+                      >
+                        Change Image
+                      </Button>
+                    </div>
+                  ) : (
+                    <>
+                      <ImageIcon className="h-10 w-10 text-muted-foreground mb-2" />
+                      <p className="text-sm text-muted-foreground mb-1">
+                        No image selected
+                      </p>
+                      <Button variant="outline" size="sm" type="button">
+                        Select from Media Library
+                      </Button>
+                    </>
+                  )}
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[700px]">
+                <DialogHeader>
+                  <DialogTitle>Select Media</DialogTitle>
+                  <DialogDescription>
+                    Choose an image from your media library to use as the
+                    featured image.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="grid grid-cols-3 gap-4 py-4">
+                  {mediaItems.map((media) => (
+                    <div
+                      key={media.id}
+                      className={`border rounded-md overflow-hidden cursor-pointer transition-all ${
+                        selectedMedia?.id === media.id
+                          ? "ring-2 ring-primary"
+                          : "hover:border-primary/50"
+                      }`}
+                      onClick={() => handleSelectMedia(media)}
+                    >
+                      <div className="aspect-video">
+                        <Image
+                          width={200}
+                          height={200}
+                          src={media.url || "/placeholder.svg"}
+                          alt={media.title}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <div className="p-2">
+                        <p className="text-sm truncate">{media.title}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </DialogContent>
+            </Dialog>
+          </div>
         </div>
       </form>
     </div>

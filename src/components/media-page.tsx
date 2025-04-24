@@ -1,7 +1,6 @@
 "use client";
 
 import type React from "react";
-
 import { useEffect, useState, useMemo } from "react";
 import {
   Download,
@@ -48,24 +47,18 @@ import {
 } from "@/components/ui/alert-dialog";
 import axios from "axios";
 import Image from "next/image";
-
-export interface MediaItem {
-  id: string;
-  url: string;
-  data: string;
-  title: string;
-}
+import { Media } from "@prisma/client";
 
 export function MediaPage() {
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedMedia, setSelectedMedia] = useState<MediaItem | null>(null);
+  const [selectedMedia, setSelectedMedia] = useState<Media | null>(null);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [title, setTitle] = useState<string>("");
-  const [mediaItems, setMediaItems] = useState<MediaItem[]>([]);
+  const [mediaItems, setMediaItems] = useState<Media[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [mediaToDelete, setMediaToDelete] = useState<string | null>(null);
+  const [mediaToDelete, setMediaToDelete] = useState<Media | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
 
@@ -78,9 +71,8 @@ export function MediaPage() {
   async function fetchMedia() {
     try {
       setIsLoading(true);
-      const response = await axios.get("/api/media");
-      const data = response.data.data;
-      setMediaItems(data);
+      const response = await axios.get<{ data: Media[] }>("/api/media");
+      setMediaItems(response.data.data);
     } catch (error) {
       console.log("Error fetching media:", error);
     } finally {
@@ -93,26 +85,31 @@ export function MediaPage() {
   }, []);
 
   // Use useMemo to avoid re-filtering on every render
-  const filteredMedia = useMemo(() => {
+  const filteredMedia = useMemo<Media[]>(() => {
     return mediaItems.filter((item) =>
       item.title.toLowerCase().includes(searchTerm.toLowerCase())
     );
   }, [mediaItems, searchTerm]);
 
-  const getBase64 = (file: File) => {
-    return new Promise((resolve, reject) => {
+  const getBase64 = (file: File): Promise<string | null> => {
+    return new Promise<string | null>((resolve, reject) => {
       const reader = new FileReader();
       reader.readAsDataURL(file);
       reader.onload = () => {
         const base64String =
           typeof reader.result === "string"
-            ? reader.result.split(",")[1]
+            ? reader.result // keep the full data URI including mime type
             : null;
         resolve(base64String);
       };
       reader.onerror = (error) => reject(error);
     });
   };
+
+  interface CloudinaryResponse {
+    url: string;
+    public_id: string;
+  }
 
   const handleUpload = async () => {
     if (!selectedFile || !title.trim()) {
@@ -122,13 +119,37 @@ export function MediaPage() {
     try {
       setIsUploading(true);
       const base64Data = await getBase64(selectedFile);
-      await axios.post("/api/media", {
-        base64Data,
-        title: title.trim(),
+
+      // Upload file to Cloudinary
+      const fileUpload = await axios.post<CloudinaryResponse>("/api/upload", {
+        file: base64Data,
       });
+
+      console.log("File upload response:", fileUpload.data);
+      if (!fileUpload.data) {
+        throw new Error("File upload failed");
+      }
+      const { url, public_id } = fileUpload.data;
+
+      // Create media entry with the uploaded file's URL and public_id
+      const media = await axios.post<{ data: Media }>("/api/media", {
+        title: title.trim(),
+        url,
+        public_id,
+      });
+
+      if (!media.data) {
+        // If media creation failed, delete the uploaded file from Cloudinary
+        await axios.delete("/api/delete", {
+          data: { public_id }, // Make sure to send public_id in the body
+        });
+      }
+
+      // Close the dialog and reset form values
       setIsUploadDialogOpen(false);
       setTitle("");
       setSelectedFile(null);
+
       fetchMedia(); // Refresh the media list after upload
     } catch (error) {
       console.log("Error uploading file:", error);
@@ -143,8 +164,8 @@ export function MediaPage() {
     setIsUploadDialogOpen(false);
   };
 
-  const openDeleteDialog = (mediaId: string) => {
-    setMediaToDelete(mediaId);
+  const openDeleteDialog = (media: Media) => {
+    setMediaToDelete(media);
     setIsDeleteDialogOpen(true);
   };
 
@@ -152,8 +173,12 @@ export function MediaPage() {
     if (!mediaToDelete) return;
 
     try {
-      await axios.delete(`/api/media?mediaId=${mediaToDelete}`);
-      setMediaItems(mediaItems.filter((item) => item.id !== mediaToDelete));
+      await axios.delete("/api/delete", {
+        data: { public_id: mediaToDelete.public_id },
+      });
+      await axios.delete(`/api/media?mediaId=${mediaToDelete.id}`);
+
+      setMediaItems(mediaItems.filter((item) => item.id !== mediaToDelete.id));
       setIsDeleteDialogOpen(false);
       setMediaToDelete(null);
     } catch (error) {
@@ -358,7 +383,7 @@ export function MediaPage() {
                     size="icon"
                     variant="ghost"
                     className="h-8 w-8 text-white"
-                    onClick={() => openDeleteDialog(item.id)}
+                    onClick={() => openDeleteDialog(item)}
                   >
                     <Trash2 className="h-4 w-4" />
                     <span className="sr-only">Delete</span>
@@ -398,7 +423,7 @@ export function MediaPage() {
                       <DropdownMenuSeparator />
                       <DropdownMenuItem
                         className="text-destructive"
-                        onClick={() => openDeleteDialog(item.id)}
+                        onClick={() => openDeleteDialog(item)}
                       >
                         <Trash2 className="mr-2 h-4 w-4" />
                         <span>Delete</span>
@@ -469,7 +494,7 @@ export function MediaPage() {
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
                       className="text-destructive"
-                      onClick={() => openDeleteDialog(item.id)}
+                      onClick={() => openDeleteDialog(item)}
                     >
                       <Trash2 className="mr-2 h-4 w-4" />
                       <span>Delete</span>
