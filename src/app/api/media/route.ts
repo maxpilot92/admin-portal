@@ -2,6 +2,14 @@
 import prisma from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 
+export const config = {
+  api: {
+    bodyParser: {
+      sizeLimit: "10mb", // Set the body size limit for this specific API route
+    },
+  },
+};
+
 export async function GET() {
   try {
     // const id = request.nextUrl.searchParams.get("mediaId");
