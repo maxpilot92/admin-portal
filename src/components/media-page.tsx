@@ -64,6 +64,7 @@ export function MediaPage() {
 
   const onFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
+      console.log("Selected file:", e.target.files[0]);
       setSelectedFile(e.target.files[0]);
     }
   };
@@ -120,24 +121,24 @@ export function MediaPage() {
       setIsUploading(true);
       const base64Data = await getBase64(selectedFile);
 
+      console.log("Uploading to cloudinary");
       // Upload file to Cloudinary
       const fileUpload = await axios.post<CloudinaryResponse>("/api/upload", {
         file: base64Data,
       });
-
       console.log("File upload response:", fileUpload.data);
       if (!fileUpload.data) {
         throw new Error("File upload failed");
       }
       const { url, public_id } = fileUpload.data;
-
+      console.log("File uploaded successfully:", url, public_id);
       // Create media entry with the uploaded file's URL and public_id
       const media = await axios.post<{ data: Media }>("/api/media", {
         title: title.trim(),
         url,
         public_id,
       });
-
+      console.log("Media entry created:", media.data);
       if (!media.data) {
         // If media creation failed, delete the uploaded file from Cloudinary
         await axios.delete("/api/delete", {

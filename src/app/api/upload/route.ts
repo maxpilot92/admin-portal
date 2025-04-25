@@ -4,7 +4,7 @@ import cloudinary from "@/lib/cloudinary";
 export async function POST(req: NextRequest) {
   const body = await req.json();
   const file = body.file;
-
+  console.log("File received:", file);
   console.log("Cloudinary ENV Check:", {
     name: process.env.CLOUDINARY_CLOUD_NAME,
     key: !!process.env.CLOUDINARY_API_KEY,
