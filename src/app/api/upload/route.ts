@@ -5,6 +5,12 @@ export async function POST(req: NextRequest) {
   const body = await req.json();
   const file = body.file;
 
+  console.log("Cloudinary ENV Check:", {
+    name: process.env.CLOUDINARY_CLOUD_NAME,
+    key: !!process.env.CLOUDINARY_API_KEY,
+    secret: !!process.env.CLOUDINARY_API_SECRET,
+  });
+
   if (!file) {
     return NextResponse.json({ error: "No file provided" }, { status: 400 });
   }
