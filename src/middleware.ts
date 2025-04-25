@@ -11,9 +11,7 @@ export async function middleware(req: NextRequest) {
   // ✅ Handle CORS differently for production
   const origin = req.headers.get("origin");
   const allowedOrigins =
-    process.env.NODE_ENV === "development"
-      ? ["*"]
-      : ["http://localhost:3000", "http://localhost:3000"];
+    process.env.NODE_ENV === "development" ? ["*"] : ["http://3.107.67.84"];
 
   if (
     origin &&
