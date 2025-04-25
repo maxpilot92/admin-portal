@@ -9,7 +9,7 @@ export async function middleware(req: NextRequest) {
   const res = NextResponse.next();
 
   // ✅ Set CORS headers
-  const origin = req.headers.get("origin") || "*";
+  const origin = "*";
   res.headers.set("Access-Control-Allow-Origin", origin);
   res.headers.set(
     "Access-Control-Allow-Methods",
