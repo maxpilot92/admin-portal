@@ -45,6 +45,7 @@
     "class-variance-authority": "^0.7.1",
     "cloudinary": "^2.6.0",
     "clsx": "^2.1.1",
+    "cors": "^2.8.5",
     "crypto": "^1.0.1",
     "date-fns": "^4.1.0",
     "framer-motion": "^12.7.4",
@@ -68,6 +69,7 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3",
     "@tailwindcss/postcss": "^4",
+    "@types/cors": "^2.8.17",
     "@types/jsonwebtoken": "^9.0.9",
     "@types/node": "^20",
     "@types/nodemailer": "^6.4.17",
