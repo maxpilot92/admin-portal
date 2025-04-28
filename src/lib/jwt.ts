@@ -6,11 +6,11 @@ const JWT_SECRET = process.env.JWT_SECRET!;
 
 export function generateResetToken(userId: string, usecase?: string) {
   if (usecase === "sign-in") {
-    const token = jwt.sign({ userId }, JWT_SECRET, { expiresIn: "24h" });
+    const token = jwt.sign({ userId }, JWT_SECRET, { expiresIn: "30d" });
     return token;
   }
   const jti = crypto.randomBytes(16).toString("hex");
-  const token = jwt.sign({ userId, jti }, JWT_SECRET, { expiresIn: "24h" });
+  const token = jwt.sign({ userId, jti }, JWT_SECRET, { expiresIn: "30d" });
   return token;
 }
 
