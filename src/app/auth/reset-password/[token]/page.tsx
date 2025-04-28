@@ -204,7 +204,7 @@ export default function ResetPasswordPage() {
             </p>
             <div className="flex justify-center">
               <Button asChild>
-                <Link href="/auth/login">Go to Login</Link>
+                <Link href="/sign-in">Go to Login</Link>
               </Button>
             </div>
           </CardContent>
