@@ -223,6 +223,15 @@ const Editor: React.FC<EditorProps> = ({ initialContent, setContent }) => {
     document.documentElement.classList.toggle("dark", checked);
   }, []);
 
+  // Prevent buttons from submitting the form
+  const handleButtonClick = useCallback(
+    (e: React.MouseEvent, callback: () => void) => {
+      e.preventDefault();
+      callback();
+    },
+    []
+  );
+
   if (!editor) return null;
 
   return (
@@ -243,7 +252,11 @@ const Editor: React.FC<EditorProps> = ({ initialContent, setContent }) => {
                       ? "bg-primary text-primary-foreground"
                       : ""
                   }`}
-                  onClick={() => toggleHeading(level as Level)}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    toggleHeading(level as Level);
+                  }}
+                  type="button"
                 >
                   H{level}
                 </ToggleGroupItem>
@@ -255,33 +268,53 @@ const Editor: React.FC<EditorProps> = ({ initialContent, setContent }) => {
               <Button
                 size="sm"
                 variant={editor.isActive("bold") ? "default" : "outline"}
-                onClick={() => editor.chain().focus().toggleBold().run()}
+                onClick={(e) =>
+                  handleButtonClick(e, () =>
+                    editor.chain().focus().toggleBold().run()
+                  )
+                }
                 disabled={!editor.can().chain().focus().toggleBold().run()}
                 title="Bold"
+                type="button"
               >
                 <BoldIcon size={16} />
               </Button>
               <Button
                 size="sm"
                 variant={editor.isActive("italic") ? "default" : "outline"}
-                onClick={() => editor.chain().focus().toggleItalic().run()}
+                onClick={(e) =>
+                  handleButtonClick(e, () =>
+                    editor.chain().focus().toggleItalic().run()
+                  )
+                }
                 title="Italic"
+                type="button"
               >
                 <ItalicIcon size={16} />
               </Button>
               <Button
                 size="sm"
                 variant={editor.isActive("underline") ? "default" : "outline"}
-                onClick={() => editor.chain().focus().toggleUnderline().run()}
+                onClick={(e) =>
+                  handleButtonClick(e, () =>
+                    editor.chain().focus().toggleUnderline().run()
+                  )
+                }
                 title="Underline"
+                type="button"
               >
                 <UnderlineIcon size={16} />
               </Button>
               <Button
                 size="sm"
                 variant={editor.isActive("strike") ? "default" : "outline"}
-                onClick={() => editor.chain().focus().toggleStrike().run()}
+                onClick={(e) =>
+                  handleButtonClick(e, () =>
+                    editor.chain().focus().toggleStrike().run()
+                  )
+                }
                 title="Strikethrough"
+                type="button"
               >
                 <Strikethrough size={16} />
               </Button>
@@ -292,16 +325,26 @@ const Editor: React.FC<EditorProps> = ({ initialContent, setContent }) => {
               <Button
                 size="sm"
                 variant={editor.isActive("bulletList") ? "default" : "outline"}
-                onClick={() => editor.chain().focus().toggleBulletList().run()}
+                onClick={(e) =>
+                  handleButtonClick(e, () =>
+                    editor.chain().focus().toggleBulletList().run()
+                  )
+                }
                 title="Bullet List"
+                type="button"
               >
                 <List size={16} />
               </Button>
               <Button
                 size="sm"
                 variant={editor.isActive("orderedList") ? "default" : "outline"}
-                onClick={() => editor.chain().focus().toggleOrderedList().run()}
+                onClick={(e) =>
+                  handleButtonClick(e, () =>
+                    editor.chain().focus().toggleOrderedList().run()
+                  )
+                }
                 title="Ordered List"
+                type="button"
               >
                 <ListOrdered size={16} />
               </Button>
@@ -312,32 +355,52 @@ const Editor: React.FC<EditorProps> = ({ initialContent, setContent }) => {
               <Button
                 size="sm"
                 variant={editor.isActive("blockquote") ? "default" : "outline"}
-                onClick={() => editor.chain().focus().toggleBlockquote().run()}
+                onClick={(e) =>
+                  handleButtonClick(e, () =>
+                    editor.chain().focus().toggleBlockquote().run()
+                  )
+                }
                 title="Blockquote"
+                type="button"
               >
                 <Quote size={16} />
               </Button>
               <Button
                 size="sm"
                 variant={editor.isActive("codeBlock") ? "default" : "outline"}
-                onClick={() => editor.chain().focus().toggleCodeBlock().run()}
+                onClick={(e) =>
+                  handleButtonClick(e, () =>
+                    editor.chain().focus().toggleCodeBlock().run()
+                  )
+                }
                 title="Code Block"
+                type="button"
               >
                 <Code2 size={16} />
               </Button>
               <Button
                 size="sm"
                 variant={editor.isActive("code") ? "default" : "outline"}
-                onClick={() => editor.chain().focus().toggleCode().run()}
+                onClick={(e) =>
+                  handleButtonClick(e, () =>
+                    editor.chain().focus().toggleCode().run()
+                  )
+                }
                 title="Inline Code"
+                type="button"
               >
                 <CodeIcon size={16} />
               </Button>
               <Button
                 size="sm"
                 variant="outline"
-                onClick={() => editor.chain().focus().setHorizontalRule().run()}
+                onClick={(e) =>
+                  handleButtonClick(e, () =>
+                    editor.chain().focus().setHorizontalRule().run()
+                  )
+                }
                 title="Horizontal Rule"
+                type="button"
               >
                 <Minus size={16} />
               </Button>
@@ -347,8 +410,13 @@ const Editor: React.FC<EditorProps> = ({ initialContent, setContent }) => {
             <Button
               size="sm"
               variant="outline"
-              onClick={() => editor.chain().focus().setHardBreak().run()}
+              onClick={(e) =>
+                handleButtonClick(e, () =>
+                  editor.chain().focus().setHardBreak().run()
+                )
+              }
               title="Line Break"
+              type="button"
             >
               <ArrowDown size={16} />
             </Button>
@@ -358,32 +426,36 @@ const Editor: React.FC<EditorProps> = ({ initialContent, setContent }) => {
               <Button
                 size="sm"
                 variant="outline"
-                onClick={addLink}
+                onClick={(e) => handleButtonClick(e, () => addLink())}
                 title="Add Link"
+                type="button"
               >
                 <LinkIcon size={16} />
               </Button>
               <Button
                 size="sm"
                 variant="outline"
-                onClick={addTable}
+                onClick={(e) => handleButtonClick(e, () => addTable())}
                 title="Insert Table"
+                type="button"
               >
                 <TableIcon size={16} />
               </Button>
               <Button
                 size="sm"
                 variant="outline"
-                onClick={() => addImage("left")}
+                onClick={(e) => handleButtonClick(e, () => addImage("left"))}
                 title="Image Left"
+                type="button"
               >
                 <ImageIcon size={16} className="mr-1" /> Left
               </Button>
               <Button
                 size="sm"
                 variant="outline"
-                onClick={() => addImage("right")}
+                onClick={(e) => handleButtonClick(e, () => addImage("right"))}
                 title="Image Right"
+                type="button"
               >
                 <ImageIcon size={16} className="mr-1" /> Right
               </Button>
@@ -394,8 +466,10 @@ const Editor: React.FC<EditorProps> = ({ initialContent, setContent }) => {
               <Button
                 size="sm"
                 variant="outline"
-                onClick={() =>
-                  editor.chain().focus().setTextAlign("left").run()
+                onClick={(e) =>
+                  handleButtonClick(e, () =>
+                    editor.chain().focus().setTextAlign("left").run()
+                  )
                 }
                 title="Align Left"
                 className={
@@ -403,14 +477,17 @@ const Editor: React.FC<EditorProps> = ({ initialContent, setContent }) => {
                     ? "bg-primary text-primary-foreground"
                     : ""
                 }
+                type="button"
               >
                 <AlignLeft size={16} />
               </Button>
               <Button
                 size="sm"
                 variant="outline"
-                onClick={() =>
-                  editor.chain().focus().setTextAlign("center").run()
+                onClick={(e) =>
+                  handleButtonClick(e, () =>
+                    editor.chain().focus().setTextAlign("center").run()
+                  )
                 }
                 title="Align Center"
                 className={
@@ -418,14 +495,17 @@ const Editor: React.FC<EditorProps> = ({ initialContent, setContent }) => {
                     ? "bg-primary text-primary-foreground"
                     : ""
                 }
+                type="button"
               >
                 <AlignCenter size={16} />
               </Button>
               <Button
                 size="sm"
                 variant="outline"
-                onClick={() =>
-                  editor.chain().focus().setTextAlign("right").run()
+                onClick={(e) =>
+                  handleButtonClick(e, () =>
+                    editor.chain().focus().setTextAlign("right").run()
+                  )
                 }
                 title="Align Right"
                 className={
@@ -433,14 +513,17 @@ const Editor: React.FC<EditorProps> = ({ initialContent, setContent }) => {
                     ? "bg-primary text-primary-foreground"
                     : ""
                 }
+                type="button"
               >
                 <AlignRight size={16} />
               </Button>
               <Button
                 size="sm"
                 variant="outline"
-                onClick={() =>
-                  editor.chain().focus().setTextAlign("justify").run()
+                onClick={(e) =>
+                  handleButtonClick(e, () =>
+                    editor.chain().focus().setTextAlign("justify").run()
+                  )
                 }
                 title="Justify"
                 className={
@@ -448,6 +531,7 @@ const Editor: React.FC<EditorProps> = ({ initialContent, setContent }) => {
                     ? "bg-primary text-primary-foreground"
                     : ""
                 }
+                type="button"
               >
                 <AlignJustify size={16} />
               </Button>
@@ -458,18 +542,28 @@ const Editor: React.FC<EditorProps> = ({ initialContent, setContent }) => {
               <Button
                 size="sm"
                 variant="outline"
-                onClick={() => editor.chain().focus().undo().run()}
+                onClick={(e) =>
+                  handleButtonClick(e, () =>
+                    editor.chain().focus().undo().run()
+                  )
+                }
                 disabled={!editor.can().chain().focus().undo().run()}
                 title="Undo"
+                type="button"
               >
                 <Undo size={16} />
               </Button>
               <Button
                 size="sm"
                 variant="outline"
-                onClick={() => editor.chain().focus().redo().run()}
+                onClick={(e) =>
+                  handleButtonClick(e, () =>
+                    editor.chain().focus().redo().run()
+                  )
+                }
                 disabled={!editor.can().chain().focus().redo().run()}
                 title="Redo"
+                type="button"
               >
                 <Redo size={16} />
               </Button>
