@@ -13,7 +13,7 @@ const allowedOrigins =
         "http://127.0.0.1:3000",
         "http://127.0.0.1:3001",
       ]
-    : ["http://54.66.132.165", "http://3.107.67.84"];
+    : ["http://54.66.132.165", "http://3.107.67.84", "tyakkai.vercel.app"];
 
 // ✅ CORS configuration
 const corsOptions = {
