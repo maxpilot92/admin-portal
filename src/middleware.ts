@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { jwtVerify } from "jose";
 
-const PUBLIC_ROUTES = ["/sign-in", "/sign-up", "/api/sign-in", "/api/blog"];
+const PUBLIC_ROUTES = ["/sign-in", "/sign-up"];
 const JWT_SECRET = process.env.JWT_SECRET!;
 
 // ✅ Configure allowed origins
@@ -15,7 +15,7 @@ const allowedOrigins =
       ]
     : ["http://54.66.132.165", "http://3.107.67.84"];
 
-// CORS options configuration
+// ✅ CORS configuration
 const corsOptions = {
   "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, PATCH, OPTIONS",
   "Access-Control-Allow-Headers": "Content-Type, Authorization",
@@ -24,12 +24,10 @@ const corsOptions = {
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
-
-  // Check the origin from the request
   const origin = req.headers.get("origin") ?? "";
   const isAllowedOrigin = allowedOrigins.includes(origin);
 
-  // Handle preflighted requests (OPTIONS)
+  // ✅ Handle preflight requests
   if (req.method === "OPTIONS") {
     const preflightHeaders = {
       ...(isAllowedOrigin && { "Access-Control-Allow-Origin": origin }),
@@ -39,21 +37,20 @@ export async function middleware(req: NextRequest) {
     return NextResponse.json({}, { status: 204, headers: preflightHeaders });
   }
 
-  // For all other requests, prepare the response
   let response;
 
-  // Check if static resource or public route - allow without auth
   const isStaticResource =
     pathname.startsWith("/_next/") || pathname === "/favicon.ico";
-  if (
-    isStaticResource ||
-    PUBLIC_ROUTES.some((route) => pathname.startsWith(route))
-  ) {
+
+  // ✅ Determine if the route is public
+  const isPublicRoute =
+    pathname.startsWith("/api/") || PUBLIC_ROUTES.includes(pathname);
+
+  if (isStaticResource || isPublicRoute) {
     response = NextResponse.next();
-  }
-  // Auth required - check for token
-  else {
+  } else {
     const token = req.cookies.get("token")?.value;
+
     if (!token) {
       response = NextResponse.redirect(new URL("/sign-in", req.url));
     } else {
@@ -67,27 +64,21 @@ export async function middleware(req: NextRequest) {
     }
   }
 
-  // Apply CORS headers to all responses
+  // ✅ Apply CORS headers
   if (isAllowedOrigin) {
     response.headers.set("Access-Control-Allow-Origin", origin);
   }
 
-  // Add all CORS headers
   Object.entries(corsOptions).forEach(([key, value]) => {
     response.headers.set(key, value);
   });
 
-  // Add Vary header for proper caching
   response.headers.set("Vary", "Origin");
 
   return response;
 }
 
+// ✅ Match all relevant paths
 export const config = {
-  matcher: [
-    // Match all paths except static files
-    "/((?!_next/static|_next/image|favicon.ico).*)",
-    // Also match API routes
-    "/api/:path*",
-  ],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)", "/api/:path*"],
 };
