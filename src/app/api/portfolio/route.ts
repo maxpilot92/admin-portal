@@ -60,9 +60,9 @@ export async function POST(request: Request) {
 
     // 3. Pull out uploaded files
     const screenshotUrls = data.getAll("images") as string[]; // Next.js gives you Blobs for file uploads
-    if (!title || !description || technologies.length === 0) {
+    if (!title || !description) {
       return NextResponse.json(
-        { error: "Missing required fields: title, description, technologies" },
+        { error: "Missing required fields: title, description" },
         { status: 400 }
       );
     }
