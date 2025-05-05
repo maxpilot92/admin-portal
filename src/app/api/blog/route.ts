@@ -7,7 +7,7 @@ const errorResponse = (message: string, status: number) =>
 
 export async function POST(request: NextRequest) {
   try {
-    const { title, content, authorId, published, tags, url } =
+    const { title, content, authorId, published, tags, url, categoryId } =
       await request.json();
 
     // console.log("Request body:", {
@@ -19,8 +19,8 @@ export async function POST(request: NextRequest) {
     //   categoryId,
     // });
 
-    if (!title || !content) {
-      return errorResponse("Title, content are required", 400);
+    if (!title || !content || !categoryId) {
+      return errorResponse("Title, content and category are required", 400);
     }
 
     const blog = await prisma.blog.create({
@@ -31,8 +31,9 @@ export async function POST(request: NextRequest) {
         published: published || false,
         tags: tags || [],
         ...(authorId && { User: { connect: { id: authorId } } }),
+        Category: { connect: { id: categoryId } },
       },
-      include: { User: true }, // Include relations
+      include: { User: true, Category: true }, // Include relations
     });
 
     return NextResponse.json(
@@ -48,6 +49,7 @@ export async function POST(request: NextRequest) {
 export async function GET(request: NextRequest) {
   try {
     const blogId = request.nextUrl.searchParams.get("blogId");
+    const categoryId = request.nextUrl.searchParams.get("categoryId");
 
     if (blogId) {
       const blog = await prisma.blog.findUnique({
@@ -60,7 +62,12 @@ export async function GET(request: NextRequest) {
     }
 
     const blogs = await prisma.blog.findMany({
-      include: { User: true },
+      where: {
+        Category: {
+          id: categoryId || undefined,
+        },
+      },
+      include: { User: true, Category: true },
     });
 
     return NextResponse.json({ status: "success", data: blogs });

@@ -15,6 +15,15 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MultiImageUpload } from "./multi-image-upload";
 import axios from "axios";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "./ui/select";
+import useCategory from "@/hooks/useCategory";
+import { ICategory } from "@/app/(pages)/blog/new/page";
 
 interface Project {
   id: string;
@@ -46,6 +55,17 @@ export function EditProjectPage({ id }: EditProjectPageProps) {
   const [existingImages, setExistingImages] = useState<string[]>([]);
   const [newImages, setNewImages] = useState<File[]>([]);
   const [imagesToDelete, setImagesToDelete] = useState<string[]>([]);
+  const [categoryId, setCategoryId] = useState("");
+
+  const [categories, setCategories] = useState<ICategory[]>();
+  const categoriesData = useCategory({ categoryFor: "portfolio" });
+
+  useEffect(() => {
+    (async () => {
+      const data = await categoriesData;
+      setCategories(data);
+    })();
+  }, []);
 
   useEffect(() => {
     const fetchProject = async () => {
@@ -91,14 +111,15 @@ export function EditProjectPage({ id }: EditProjectPageProps) {
       formData.append("repoUrl", repoUrl);
       formData.append("featured", String(featured));
       formData.append("imagesToDelete", JSON.stringify(imagesToDelete));
+      formData.append("categoryId", categoryId);
       newImages.forEach((image) => formData.append("newImages", image));
-
+      console.log("FormData:", formData);
       const response = await axios.patch(
         `/api/portfolio?portfolioId=${id}`,
         formData
       );
       console.log(response);
-      router.push(`/portfolio/${id}`);
+      router.push(`/portfolio`);
     } catch (error) {
       console.error("Error updating project:", error);
       setIsSubmitting(false);
@@ -216,7 +237,29 @@ export function EditProjectPage({ id }: EditProjectPageProps) {
             </div>
           </CardContent>
         </Card>
-
+        <Card>
+          <CardContent>
+            <div className="grid gap-3">
+              <Label htmlFor="category" className="text-base">
+                Category
+              </Label>
+              <div className="flex gap-2">
+                <Select value={categoryId} onValueChange={setCategoryId}>
+                  <SelectTrigger id="category">
+                    <SelectValue placeholder="Select a category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categories?.map((category) => (
+                      <SelectItem key={category.id} value={category.id}>
+                        {category.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
         <div className="grid gap-6 md:grid-cols-2">
           <Card>
             <CardContent className="pt-6">

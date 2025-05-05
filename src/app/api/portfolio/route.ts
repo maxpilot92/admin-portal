@@ -7,7 +7,7 @@ import { NextRequest, NextResponse } from "next/server";
 export async function GET(request: NextRequest) {
   try {
     const id = request.nextUrl.searchParams.get("portfolioId");
-
+    const categoryId = request.nextUrl.searchParams.get("categoryId");
     if (id) {
       const portfolio = await prisma.portfolio.findUnique({
         where: { id },
@@ -22,6 +22,11 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(portfolio);
     }
     const portfolios = await prisma.portfolio.findMany({
+      where: {
+        Category: {
+          id: categoryId || undefined,
+        },
+      },
       include: { screenshots: true },
       orderBy: { createdAt: "desc" },
     });
@@ -45,6 +50,7 @@ export async function POST(request: Request) {
     const techRaw = data.get("technologies") as string; // e.g. "React,Next.js,Tailwind"
     const liveUrl = data.get("liveUrl") as string;
     const repoUrl = data.get("repoUrl") as string;
+    const categoryId = data.get("categoryId") as string;
 
     // 2. Parse technologies into string[]
     const technologies = techRaw
@@ -72,8 +78,11 @@ export async function POST(request: Request) {
         screenshots: {
           create: screenshotUrls.map((url) => ({ url })),
         },
+        Category: {
+          connect: { id: categoryId },
+        },
       },
-      include: { screenshots: true },
+      include: { screenshots: true, Category: true },
     });
 
     return NextResponse.json(newPortfolio, { status: 201 });
@@ -103,7 +112,8 @@ export async function PATCH(request: NextRequest) {
     const techRaw = data.get("technologies") as string;
     const liveUrl = data.get("liveUrl") as string;
     const repoUrl = data.get("repoUrl") as string;
-
+    const categoryId = data.get("categoryId") as string;
+    console.log("categoryId", categoryId);
     const technologies = techRaw
       .split(",")
       .map((t) => t.trim())
@@ -125,7 +135,9 @@ export async function PATCH(request: NextRequest) {
               create: screenshotUrls.map((url) => ({ url })), // add new
             }
           : undefined,
+        ...(categoryId && { Category: { connect: { id: categoryId } } }),
       },
+
       include: { screenshots: true },
     });
 

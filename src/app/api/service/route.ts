@@ -5,6 +5,7 @@ import { NextRequest, NextResponse } from "next/server";
 export async function GET(request: NextRequest) {
   try {
     const id = request.nextUrl.searchParams.get("serviceId");
+    const categoryId = request.nextUrl.searchParams.get("categoryId");
     if (id) {
       const service = await prisma.service.findUnique({ where: { id } });
       if (!service) {
@@ -17,6 +18,11 @@ export async function GET(request: NextRequest) {
     }
 
     const allServices = await prisma.service.findMany({
+      where: {
+        Category: {
+          id: categoryId || undefined,
+        },
+      },
       orderBy: { createdAt: "desc" },
     });
     return NextResponse.json(allServices, { status: 200 });
@@ -32,7 +38,8 @@ export async function GET(request: NextRequest) {
 // POST: Create new service
 export async function POST(request: NextRequest) {
   try {
-    const { title, description, image } = await request.json();
+    const { title, description, image, categoryId, cursor1, cursor2 } =
+      await request.json();
 
     if (!title || !description) {
       return NextResponse.json(
@@ -42,7 +49,14 @@ export async function POST(request: NextRequest) {
     }
 
     const newService = await prisma.service.create({
-      data: { title, description, image },
+      data: {
+        title,
+        description,
+        image,
+        cursor1,
+        cursor2,
+        Category: { connect: { id: categoryId } },
+      },
     });
 
     return NextResponse.json(newService, { status: 201 });
@@ -59,7 +73,8 @@ export async function POST(request: NextRequest) {
 export async function PATCH(request: NextRequest) {
   try {
     const id = request.nextUrl.searchParams.get("serviceId");
-    const { title, description, image } = await request.json();
+    const { title, description, image, cursor1, cursor2, categoryId } =
+      await request.json();
 
     if (!id) {
       return NextResponse.json(
@@ -70,7 +85,14 @@ export async function PATCH(request: NextRequest) {
 
     const updatedService = await prisma.service.update({
       where: { id },
-      data: { title, description, image },
+      data: {
+        title,
+        description,
+        image,
+        cursor1,
+        cursor2,
+        ...(categoryId && { Category: { connect: { id: categoryId } } }),
+      },
     });
 
     return NextResponse.json(updatedService, { status: 200 });

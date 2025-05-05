@@ -151,6 +151,18 @@ export function Sidebar({ open, onOpenChange }: SidebarProps) {
       icon: Wrench,
       href: "/services",
       active: pathname === "/services",
+      children: [
+        {
+          label: "All Services",
+          href: "/services",
+          active: pathname === "/services",
+        },
+        {
+          label: "Categories",
+          href: "/services/categories",
+          active: pathname === "/services/categories",
+        },
+      ],
     },
     {
       label: "Use Case",

@@ -21,6 +21,15 @@ import {
   DialogTitle,
 } from "./ui/dialog";
 import { Dialog, DialogTrigger } from "@radix-ui/react-dialog";
+import useCategory from "@/hooks/useCategory";
+import { ICategory } from "@/app/(pages)/blog/new/page";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "./ui/select";
 
 interface MediaItem {
   id: string;
@@ -46,6 +55,17 @@ export function NewProjectPage() {
     url: string;
   } | null>(null);
   const [isMediaDialogOpen, setIsMediaDialogOpen] = useState(false);
+  const [categoryId, setCategoryId] = useState("");
+
+  const [categories, setCategories] = useState<ICategory[]>();
+  const categoriesData = useCategory({ categoryFor: "portfolio" });
+
+  useEffect(() => {
+    (async () => {
+      const data = await categoriesData;
+      setCategories(data);
+    })();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -60,6 +80,7 @@ export function NewProjectPage() {
       formData.append("liveUrl", liveUrl);
       formData.append("repoUrl", repoUrl);
       formData.append("featured", String(featured));
+      formData.append("categoryId", categoryId);
       images.forEach((image) => formData.append("images", image));
 
       console.log(formData);
@@ -95,7 +116,7 @@ export function NewProjectPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        heading="Create New Project"
+        heading="Create New Portfolio"
         text="Add a new project to your portfolio"
       >
         <div className="flex gap-2">
@@ -112,7 +133,7 @@ export function NewProjectPage() {
             ) : (
               <>
                 <Plus className="mr-2 h-4 w-4" />
-                Create Project
+                Create Portfolio
               </>
             )}
           </Button>
@@ -125,7 +146,7 @@ export function NewProjectPage() {
             <div className="grid gap-6">
               <div className="grid gap-3">
                 <Label htmlFor="title" className="text-base">
-                  Project Title
+                  Portfolio Title
                 </Label>
                 <Input
                   id="title"
@@ -154,6 +175,29 @@ export function NewProjectPage() {
         </Card>
 
         <div className="grid gap-6 md:grid-cols-2">
+          <Card>
+            <CardContent>
+              <div className="grid gap-3">
+                <Label htmlFor="category" className="text-base">
+                  Category
+                </Label>
+                <div className="flex gap-2">
+                  <Select value={categoryId} onValueChange={setCategoryId}>
+                    <SelectTrigger id="category">
+                      <SelectValue placeholder="Select a category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {categories?.map((category) => (
+                        <SelectItem key={category.id} value={category.id}>
+                          {category.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
           <Card>
             <CardContent className="pt-6">
               <div className="space-y-6">
@@ -207,7 +251,7 @@ export function NewProjectPage() {
                     checked={featured}
                     onCheckedChange={setFeatured}
                   />
-                  <Label htmlFor="featured">Featured Project</Label>
+                  <Label htmlFor="featured">Featured Portfolio</Label>
                 </div>
               </div>
             </CardContent>

@@ -4,7 +4,7 @@ import { DashboardLayout } from "@/components/dashboard-layout";
 export default function Categories() {
   return (
     <DashboardLayout>
-      <CategoriesPage categoryFor="portfolio" />
+      <CategoriesPage categoryFor="service" />
     </DashboardLayout>
   );
 }

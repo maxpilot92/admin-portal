@@ -3,8 +3,8 @@
 import type React from "react";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { ArrowLeft, Check, ImageIcon, Loader2 } from "lucide-react";
+import { useRouter, useParams } from "next/navigation";
+import { ArrowLeft, Check, ImageIcon, Loader2, Plus } from "lucide-react";
 import { DashboardLayout } from "@/components/dashboard-layout";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
@@ -24,6 +24,7 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -33,8 +34,9 @@ import { Badge } from "@/components/ui/badge";
 import axios from "axios";
 import Image from "next/image";
 import Editor from "@/components/tiptap/editor";
+import useCategory from "@/hooks/useCategory";
 
-interface ICategory {
+export interface ICategory {
   id: string;
   name: string;
   createdAt: string;
@@ -48,8 +50,12 @@ interface MediaItem {
   title: string;
 }
 
-export default function NewBlogPage() {
+export default function EditBlogPage() {
   const router = useRouter();
+  const params = useParams();
+  const blogId = params.id as string;
+
+  const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isMediaDialogOpen, setIsMediaDialogOpen] = useState(false);
   const [selectedMedia, setSelectedMedia] = useState<{
@@ -63,21 +69,53 @@ export default function NewBlogPage() {
   const [categoryId, setCategoryId] = useState("");
   const [tagInput, setTagInput] = useState("");
   const [published, setPublished] = useState(false);
+  const [categoryName, setCategoryName] = useState("");
   const [categories, setCategories] = useState<ICategory[]>();
-  const [mediaItems, setMediaItems] = useState<MediaItem[]>([]);
-  const [url, setUrl] = useState("");
+  const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false);
   const [excerpt, setExcerpt] = useState("");
   const [seoTitle, setSeoTitle] = useState("");
+  const [mediaItems, setMediaItems] = useState<MediaItem[]>([]);
+  const [url, setUrl] = useState("");
+  const categoriesData = useCategory({ categoryFor: "blog" });
 
-  const handleAddTag = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter" && tagInput.trim() !== "") {
-      e.preventDefault();
-      if (!tags.includes(tagInput.trim())) {
-        setTags([...tags, tagInput.trim()]);
+  // Fetch blog post data
+  useEffect(() => {
+    const fetchBlogPost = async () => {
+      try {
+        setIsLoading(true);
+        const response = await axios.get(`/api/blog?blogId=${blogId}`);
+        const blogData = response.data.data;
+
+        // Populate form fields with blog data
+        setTitle(blogData.title);
+        setContent(blogData.content);
+        setCategoryId(blogData.categoryId);
+        setTags(blogData.tags || []);
+        setPublished(blogData.published);
+        setUrl(blogData.url || "");
+
+        // Set media if available
+        if (blogData.mediaId && blogData.mediaUrl) {
+          setSelectedMedia({
+            id: blogData.mediaId,
+            title: blogData.title, // You might want to store the media title in your database
+            url: blogData.mediaUrl,
+          });
+        }
+
+        // Set additional fields if available
+        if (blogData.excerpt) setExcerpt(blogData.excerpt);
+        if (blogData.seoTitle) setSeoTitle(blogData.seoTitle);
+      } catch (error) {
+        console.error("Error fetching blog post:", error);
+        // Show error notification or redirect back
+      } finally {
+        setIsLoading(false);
       }
-      setTagInput("");
-    }
-  };
+    };
+
+    fetchBlogPost();
+  }, [blogId]);
 
   async function fetchMedia() {
     try {
@@ -93,6 +131,23 @@ export default function NewBlogPage() {
     fetchMedia();
   }, []);
 
+  useEffect(() => {
+    (async () => {
+      const data = await categoriesData;
+      setCategories(data);
+    })();
+  }, []);
+
+  const handleAddTag = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" && tagInput.trim() !== "") {
+      e.preventDefault();
+      if (!tags.includes(tagInput.trim())) {
+        setTags([...tags, tagInput.trim()]);
+      }
+      setTagInput("");
+    }
+  };
+
   const handleRemoveTag = (tagToRemove: string) => {
     setTags(tags.filter((tag) => tag !== tagToRemove));
   };
@@ -103,14 +158,19 @@ export default function NewBlogPage() {
     setIsMediaDialogOpen(false);
   };
 
+  const updateContent = (htmlContent: string) => {
+    setContent(htmlContent);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
 
     try {
-      const response = await axios.post("/api/blog", {
+      // Make PATCH request to update the blog post
+      const response = await axios.patch(`/api/blog?blogId=${blogId}`, {
         title,
-        content, // This will now contain the latest content
+        content,
         published: true, // Force publish state
         tags,
         categoryId,
@@ -118,10 +178,12 @@ export default function NewBlogPage() {
         excerpt,
         seoTitle,
       });
-      console.log("Blog published successfully:", response);
+
+      console.log("Blog updated successfully:", response);
       router.push("/blog");
     } catch (error) {
-      console.log(error);
+      console.error("Error updating blog post:", error);
+      // Show error notification
     } finally {
       setIsSubmitting(false);
     }
@@ -132,9 +194,9 @@ export default function NewBlogPage() {
     setIsSubmitting(true);
 
     try {
-      const response = await axios.post("/api/blog", {
+      const response = await axios.patch(`/api/blog?blogId=${blogId}`, {
         title,
-        content, // This will now contain the latest content
+        content,
         published: false, // Save as draft
         tags,
         categoryId,
@@ -151,30 +213,41 @@ export default function NewBlogPage() {
     }
   };
 
-  const updateContent = (htmlContent: string) => {
-    setContent(htmlContent);
-  };
-
-  async function fetchCategories() {
+  const handleCategorySave = async (e: React.FormEvent) => {
+    e.preventDefault();
     try {
-      const response = await axios.get(`/api/category?for=blog`);
-      console.log(response);
-      setCategories(response.data.data);
+      const response = await axios.post("/api/category", {
+        name: categoryName,
+        categoryFor: "blog",
+      });
+      if (response.data.status === "success") {
+        const data = await categoriesData;
+        setCategories(data);
+        setIsCategoryDialogOpen(false); // Close dialog
+        setCategoryName(""); // Reset input field
+      }
     } catch (error) {
       console.log(error);
     }
-  }
+  };
 
-  useEffect(() => {
-    fetchCategories();
-  }, []);
+  if (isLoading) {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center h-[60vh]">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <span className="ml-2">Loading blog post...</span>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout>
       <div className="space-y-6">
         <PageHeader
-          heading="Create New Blog Post"
-          text="Create and publish a new blog post"
+          heading="Edit Blog Post"
+          text="Update and republish your blog post"
         >
           <div className="flex gap-2">
             <Button variant="outline" onClick={() => router.push("/blog")}>
@@ -199,12 +272,12 @@ export default function NewBlogPage() {
               {isSubmitting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Publishing...
+                  Updating...
                 </>
               ) : (
                 <>
                   <Check className="mr-2 h-4 w-4" />
-                  Publish
+                  Update Post
                 </>
               )}
             </Button>
@@ -239,7 +312,10 @@ export default function NewBlogPage() {
                       <TabsTrigger value="preview">Preview</TabsTrigger>
                     </TabsList>
                     <TabsContent value="write" className="mt-2">
-                      <Editor setContent={updateContent} />
+                      <Editor
+                        setContent={updateContent}
+                        initialContent={content}
+                      />
                     </TabsContent>
                     <TabsContent value="preview" className="mt-2">
                       <div className="border rounded-md p-4 min-h-[400px] prose dark:prose-invert max-w-none">
@@ -279,6 +355,49 @@ export default function NewBlogPage() {
                           ))}
                         </SelectContent>
                       </Select>
+
+                      <Dialog
+                        open={isCategoryDialogOpen}
+                        onOpenChange={setIsCategoryDialogOpen}
+                      >
+                        <DialogTrigger asChild>
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            className="shrink-0"
+                          >
+                            <Plus className="h-4 w-4" />
+                            <span className="sr-only">Add new category</span>
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent className="sm:max-w-[425px]">
+                          <DialogHeader>
+                            <DialogTitle>Add New Category</DialogTitle>
+                            <DialogDescription>
+                              Create a new category for your blog post.
+                            </DialogDescription>
+                          </DialogHeader>
+                          <form onSubmit={handleCategorySave}>
+                            <div className="grid gap-4 py-4">
+                              <div className="grid gap-2">
+                                <Label htmlFor="new-category-name">Name</Label>
+                                <Input
+                                  id="new-category-name"
+                                  value={categoryName}
+                                  onChange={(e) =>
+                                    setCategoryName(e.target.value)
+                                  }
+                                  placeholder="Enter category name"
+                                  required
+                                />
+                              </div>
+                            </div>
+                            <DialogFooter>
+                              <Button type="submit">Add Category</Button>
+                            </DialogFooter>
+                          </form>
+                        </DialogContent>
+                      </Dialog>
                     </div>
                   </div>
 
