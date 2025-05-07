@@ -158,7 +158,7 @@ export default function EditBlogPage() {
 
   const handleSelectMedia = (media: (typeof mediaItems)[0]) => {
     setSelectedMedia(media);
-    setUrl(process.env.NEXT_PUBLIC_DOMAIN + media.url);
+    setUrl(media.url);
     setIsMediaDialogOpen(false);
   };
 

@@ -101,7 +101,7 @@ export default function NewBlogPage() {
 
   const handleSelectMedia = (media: (typeof mediaItems)[0]) => {
     setSelectedMedia(media);
-    setUrl(process.env.NEXT_PUBLIC_DOMAIN + media.url);
+    setUrl(media.url);
     setIsMediaDialogOpen(false);
   };
 
@@ -110,7 +110,7 @@ export default function NewBlogPage() {
     setIsSubmitting(true);
 
     try {
-      const response = await axios.post("/api/blog", {
+      await axios.post("/api/blog", {
         title,
         content, // This will now contain the latest content
         published: true, // Force publish state
@@ -120,7 +120,7 @@ export default function NewBlogPage() {
         excerpt,
         seoTitle,
       });
-      console.log("Blog published successfully:", response);
+
       router.push("/blog");
     } catch (error) {
       console.log(error);
